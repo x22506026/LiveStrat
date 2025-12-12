@@ -1,0 +1,15 @@
+/*this file defines the layout for the strategies page*/
+
+.strategies-layout {
+    /*creates a double column layout with controls on the left and content on the right*/
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+}
+
+.strategies-controls {
+    /*stacks the strategy controls vertically with spacing*/
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

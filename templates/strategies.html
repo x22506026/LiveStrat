@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+<!--uses the base layout so the strategies page shares the same sidebar and structure-->
+
+{% block title %}Strategies | LiveStrat{% endblock %}
+<!--sets the page title for the strategies page-->
+
+{% block extra_css %}
+<!--loads page-specific styles for the strategies layout-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/strategies.css') }}">
+{% endblock %}
+
+{% block content %}
+<!--main content area for the strategies page-->
+<div class="page-header">
+    <!--page heading and short description-->
+    <h1>Strategies</h1>
+    <p>Try a simple strategy idea and see example results.</p>
+</div>
+
+<div class="strategies-layout">
+    <!--controls card for selecting a strategy and asset-->
+    <div class="card strategies-controls">
+        <div>
+            <!--strategy selection dropdown-->
+            <label for="strategy-select">Strategy</label>
+            <select id="strategy-select">
+                <option value="rsi">RSI rebound</option>
+                <option value="ma">Moving average cross</option>
+                <option value="trend">Trend + sentiment</option>
+            </select>
+        </div>
+
+        <div>
+            <!--asset selection dropdown-->
+            <label for="strategy-asset">Asset</label>
+            <select id="strategy-asset">
+                <option value="BTCUSDT">BTC / USDT</option>
+                <option value="ETHUSDT">ETH / USDT</option>
+            </select>
+        </div>
+
+        <!--button that triggers the demo strategy logic-->
+        <button id="strategy-run">Run demo strategy</button>
+    </div>
+
+    <!--results card showing example strategy outputs-->
+    <div class="card">
+        <h2>Example results</h2>
+
+        <!--summary text updated dynamically by javascript-->
+        <p id="strategy-summary" class="note">
+            Pick a strategy and asset to see some sample numbers.
+        </p>
+
+        <!--grid layout for displaying strategy metrics-->
+        <div class="metrics-grid">
+            <!--win rate metric-->
+            <div class="metric-box">
+                <p class="metric-label">Win rate</p>
+                <p class="metric-value" id="strategy-winrate">–</p>
+            </div>
+
+            <!--confidence metric-->
+            <div class="metric-box">
+                <p class="metric-label">Confidence</p>
+                <p class="metric-value" id="strategy-confidence">–</p>
+            </div>
+
+            <!--maximum drawdown metric-->
+            <div class="metric-box">
+                <p class="metric-label">Max drawdown</p>
+                <p class="metric-value" id="strategy-drawdown">–</p>
+            </div>
+        </div>
+
+        <!--note explaining future use of real backtesting data-->
+        <p class="note">
+            Later these will come from real backtests that mix price data and sentiment.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!--loads javascript that controls the strategies demo behaviour-->
+<script src="{{ url_for('static', filename='css/js/strategies.js') }}"></script>
+{% endblock %}

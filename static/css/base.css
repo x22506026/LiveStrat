@@ -1,0 +1,202 @@
+/*this file defines the main light flat theme for the whole app*/
+
+/*resets default browser spacing and sizing*/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/*defines shared colors, spacing and sizes used across the app*/
+:root {
+    /*background colors*/
+    --bg-page: #f3f4f6;
+    --bg-sidebar: #111827;
+    --bg-card: #ffffff;
+
+    /*text colors*/
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --link: #2563eb;
+
+    /*primary accent colors*/
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+
+    /*border radius values*/
+    --radius: 10px;
+    --radius-small: 6px;
+}
+
+/*styles the main page background and default text*/
+body {
+    background: var(--bg-page);
+    color: var(--text-main);
+    font-family: Arial, sans-serif;
+}
+
+/*overall grid layout with sidebar and main content*/
+.app-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+}
+
+/*sidebar container styling*/
+.sidebar {
+    background: var(--bg-sidebar);
+    color: #e5e7eb;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/*app logo text in the sidebar*/
+.logo-text {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/*navigation links inside the sidebar*/
+.sidebar-item {
+    display: block;
+    padding: 8px 10px;
+    border-radius: var(--radius-small);
+    margin-bottom: 4px;
+    text-decoration: none;
+    color: #e5e7eb;
+    font-size: 14px;
+}
+
+/*hover effect for sidebar links*/
+.sidebar-item:hover {
+    background: #1f2937;
+}
+
+/*style for the currently active page link*/
+.sidebar-item.active {
+    background: #1f2937;
+    font-weight: 600;
+}
+
+/*special colour for the sign out link*/
+.sidebar-item.logout {
+    color: #fca5a5;
+}
+
+/*main page content area*/
+.main-content {
+    padding: 24px 32px;
+}
+
+/*page header section used on each page*/
+.page-header {
+    margin-bottom: 18px;
+}
+
+.page-header h1 {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.page-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/*reusable card container used throughout the app*/
+.card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    border: 1px solid #e5e7eb;
+}
+
+/*two-column row layout for cards when needed*/
+.card-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/*label text used above metric values*/
+.metric-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+/*main numeric value styling*/
+.metric-value {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/*grid layout for displaying multiple metrics*/
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/*individual metric box styling*/
+.metric-box {
+    background: #f9fafb;
+    border-radius: var(--radius-small);
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+/*form label styling*/
+label {
+    font-size: 13px;
+    color: var(--text-main);
+}
+
+/*shared styling for select boxes and text inputs*/
+select,
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px;
+    border-radius: var(--radius-small);
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+}
+
+/*primary button styling*/
+button {
+    padding: 9px 12px;
+    border-radius: var(--radius-small);
+    border: none;
+    background: var(--primary);
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+/*hover effect for buttons*/
+button:hover {
+    background: var(--primary-hover);
+}
+
+/*small helper text used for notes and explanations*/
+.note {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+
+
+
+
+
+
+

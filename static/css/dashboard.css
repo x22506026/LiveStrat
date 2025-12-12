@@ -1,0 +1,20 @@
+/*this file defines layout tweaks for the dashboard page only*/
+
+.dashboard-grid {
+    /*creates a two-column layout for the main dashboard cards*/
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.dashboard-bottom {
+    /*creates a three-column layout for the bottom dashboard cards*/
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+
+
+

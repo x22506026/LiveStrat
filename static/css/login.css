@@ -1,0 +1,62 @@
+/*styles shared by the login and signup pages*/
+
+body {
+    /*sets the base font and centers the login box on the screen*/
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.login-container {
+    /*styles the card that holds the login or signup form*/
+    background: #111827;
+    padding: 32px;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.login-container h2 {
+    /*styles the heading text*/
+    margin-top: 0;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.login-container form {
+    /*lays out the form fields vertically*/
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.login-container input {
+    /*styles the input fields*/
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    background: #1f2937;
+    color: #e5e7eb;
+}
+
+.login-container button {
+    /*styles the submit button*/
+    padding: 10px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: none;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+}
+
+.login-container a {
+    /*styles links below the form*/
+    color: #60a5fa;
+    text-decoration: none;
+}

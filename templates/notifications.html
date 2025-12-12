@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+<!--uses the base layout so the notifications page shares the same sidebar and structure-->
+
+{% block title %}Notifications | LiveStrat{% endblock %}
+<!--sets the page title for the notifications page-->
+
+{% block content %}
+<!--main content area for the notifications page-->
+<div class="page-header">
+    <!--page heading and short description-->
+    <h1>Notifications</h1>
+    <p>Choose what you want to be alerted about.</p>
+</div>
+
+<!--card containing notification preferences and preview-->
+<div class="card" style="max-width: 640px;">
+    <!--option to enable or disable price alerts-->
+    <div>
+        <label>
+            <input type="checkbox" id="notif-price" checked>
+            Price alerts
+        </label>
+    </div>
+
+    <!--option to enable or disable strategy signals-->
+    <div>
+        <label>
+            <input type="checkbox" id="notif-strategy" checked>
+            Strategy signals
+        </label>
+    </div>
+
+    <!--option to enable or disable sentiment-based alerts-->
+    <div>
+        <label>
+            <input type="checkbox" id="notif-sentiment">
+            Sentiment changes
+        </label>
+    </div>
+
+    <!--button to generate a demo notification preview-->
+    <button id="notif-test">Test notification</button>
+
+    <!--area showing a preview of the notification message-->
+    <div style="margin-top:12px;">
+        <p class="metric-label">Preview</p>
+        <p id="notif-preview">
+            Click the button to see how a message could look.
+        </p>
+    </div>
+
+    <!--note explaining future Telegram integration-->
+    <p class="note">
+        Later the same message will also be sent through the Telegram bot.
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!--loads javascript that controls the notification demo behaviour-->
+<script src="{{ url_for('static', filename='css/js/notifications.js') }}"></script>
+{% endblock %}

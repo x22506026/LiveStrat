@@ -1,0 +1,13 @@
+/*this file defines the layout for the markets page*/
+
+.markets-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+}
+
+.markets-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

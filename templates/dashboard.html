@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+<!--uses the base layout so the dashboard shares the same sidebar and structure-->
+
+{% block title %}Dashboard | LiveStrat{% endblock %}
+<!--sets the page title for the dashboard-->
+
+{% block extra_css %}
+<!--loads page-specific styles for the dashboard layout-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<!--main content area for the dashboard-->
+<div class="page-header">
+    <!--page heading and short description-->
+    <h1>Dashboard</h1>
+    <p>Quick view of the market, sentiment and current model idea.</p>
+</div>
+
+<div class="dashboard-grid">
+    <!--card showing a simple market trend demo-->
+    <div class="card">
+        <h2>Market Trend</h2>
+        <p class="note">Small demo based on the asset you pick.</p>
+
+        <!--asset selector for trend demo-->
+        <label for="trend-asset">Asset</label>
+        <select id="trend-asset">
+            <option value="BTCUSDT">BTC / USDT</option>
+            <option value="ETHUSDT">ETH / USDT</option>
+            <option value="SOLUSDT">SOL / USDT</option>
+        </select>
+
+        <!--trend output updated by javascript-->
+        <div style="margin-top:10px;">
+            <p class="metric-label">Trend</p>
+            <p class="metric-value" id="trend-status">Neutral</p>
+        </div>
+    </div>
+
+    <!--card showing a simple sentiment demo-->
+    <div class="card">
+        <h2>Sentiment</h2>
+        <p class="note">Rough idea using Reddit and Twitter in the future.</p>
+
+        <!--asset selector for sentiment demo-->
+        <label for="sentiment-asset">Asset</label>
+        <select id="sentiment-asset">
+            <option value="BTC">Bitcoin</option>
+            <option value="ETH">Ethereum</option>
+        </select>
+
+        <!--sentiment score output-->
+        <div style="margin-top:10px;">
+            <p class="metric-label">Score</p>
+            <p class="metric-value" id="sentiment-score">62 / 100</p>
+        </div>
+
+        <!--short text summaries for different sentiment sources-->
+        <p id="reddit-line" class="note">Reddit: mostly positive.</p>
+        <p id="twitter-line" class="note">Twitter: limited data, neutral.</p>
+    </div>
+</div>
+
+<div class="dashboard-bottom">
+    <!--card displaying the overall model verdict-->
+    <div class="card">
+        <h3>Model Verdict</h3>
+        <p class="metric-label">Current verdict</p>
+        <p class="metric-value" id="model-verdict">Hold / Don’t buy</p>
+        <p class="note">Later this will come from the ML model.</p>
+    </div>
+
+    <!--card showing a summary of the last analysis-->
+    <div class="card">
+        <h3>Last Analysis</h3>
+        <p id="analysis-summary">
+            Example: BTC, 4h view, normal volatility and slightly positive mood.
+        </p>
+    </div>
+
+    <!--card showing the most recent notification example-->
+    <div class="card">
+        <h3>Latest Notification</h3>
+        <p id="latest-notification">
+            Example: “If BTC closes above a key level with good sentiment, send a buy alert.”
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!--loads javascript that controls the dashboard demo behaviour-->
+<script src="{{ url_for('static', filename='css/js/dashboard.js') }}"></script>
+{% endblock %}

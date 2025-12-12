@@ -1,0 +1,15 @@
+/*this file defines the layout for the analytics page*/
+
+.analytics-layout {
+    /*creates a two-column layout with controls on the left and results on the right*/
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+}
+
+.analytics-controls {
+    /*stacks the analytics controls vertically with spacing*/
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

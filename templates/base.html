@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--sets character encoding for the page-->
+    <meta charset="UTF-8">
+
+    <!--page title, overridden by child templates when needed-->
+    <title>{% block title %}LiveStrat{% endblock %}</title>
+
+    <!--loads the main global stylesheet used across all pages-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+
+    <!--allows pages to inject their own css files-->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<!--main layout wrapper for sidebar and content-->
+<div class="app-layout">
+    <!--sidebar navigation section-->
+    <aside class="sidebar">
+        <!--top area of the sidebar with app branding-->
+        <div class="sidebar-header">
+            <a href="{{ url_for('dashboard') }}" class="logo-link">
+                <span class="logo-text">LiveStrat</span>
+            </a>
+        </div>
+
+        <!--navigation links for different app sections-->
+        <nav class="sidebar-nav">
+            <!--dashboard navigation link-->
+            <a href="{{ url_for('dashboard') }}"
+               class="sidebar-item {% if active_page == 'dashboard' %}active{% endif %}">
+                Dashboard
+            </a>
+
+            <!--markets navigation link-->
+            <a href="{{ url_for('markets') }}"
+               class="sidebar-item {% if active_page == 'markets' %}active{% endif %}">
+                Markets
+            </a>
+
+            <!--strategies navigation link-->
+            <a href="{{ url_for('strategies') }}"
+               class="sidebar-item {% if active_page == 'strategies' %}active{% endif %}">
+                Strategies
+            </a>
+
+            <!--analytics navigation link-->
+            <a href="{{ url_for('analytics') }}"
+               class="sidebar-item {% if active_page == 'analytics' %}active{% endif %}">
+                Analytics
+            </a>
+
+            <!--notifications navigation link-->
+            <a href="{{ url_for('notifications') }}"
+               class="sidebar-item {% if active_page == 'notifications' %}active{% endif %}">
+                Notifications
+            </a>
+        </nav>
+
+        <!--bottom section of the sidebar-->
+        <div class="sidebar-footer">
+            <!--sign out link-->
+            <a href="{{ url_for('logout') }}" class="sidebar-item logout">
+                Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!--main content area where each page is rendered-->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<!--allows pages to inject page-specific javascript-->
+{% block extra_js %}{% endblock %}
+</body>
+</html>

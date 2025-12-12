@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+<!--uses the base layout so the markets page shares the same sidebar and structure-->
+
+{% block title %}Markets | LiveStrat{% endblock %}
+<!--sets the page title for the markets page-->
+
+{% block extra_css %}
+<!--loads page-specific styles for the markets layout-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/markets.css') }}">
+{% endblock %}
+
+{% block content %}
+<!--main content area for the markets page-->
+<div class="page-header">
+    <!--page heading and short description-->
+    <h1>Markets</h1>
+    <p>Pick a coin and see a simple demo of market numbers.</p>
+</div>
+
+<div class="markets-layout">
+    <!--controls card for selecting asset and timeframe-->
+    <div class="card markets-controls">
+        <div>
+            <!--asset selector-->
+            <label for="market-asset">Asset</label>
+            <select id="market-asset">
+                <option value="BTCUSDT">BTC / USDT</option>
+                <option value="ETHUSDT">ETH / USDT</option>
+                <option value="SOLUSDT">SOL / USDT</option>
+            </select>
+        </div>
+
+        <div>
+            <!--timeframe selector-->
+            <label for="market-timeframe">Timeframe</label>
+            <select id="market-timeframe">
+                <option value="1h">1 hour</option>
+                <option value="4h">4 hours</option>
+                <option value="1d">1 day</option>
+            </select>
+        </div>
+
+        <!--button that triggers the market snapshot demo-->
+        <button id="market-generate">Show market snapshot</button>
+    </div>
+
+    <!--results card showing the market snapshot-->
+    <div class="card">
+        <h2>Snapshot</h2>
+
+        <!--summary text updated dynamically by javascript-->
+        <p id="market-summary" class="note">
+            Choose an asset and timeframe to fill in the fields below.
+        </p>
+
+        <!--grid layout for displaying market metrics-->
+        <div class="metrics-grid">
+            <!--high and low price metric-->
+            <div class="metric-box">
+                <p class="metric-label">High / Low</p>
+                <p class="metric-value" id="market-high-low">–</p>
+            </div>
+
+            <!--average price metric-->
+            <div class="metric-box">
+                <p class="metric-label">Average price</p>
+                <p class="metric-value" id="market-average">–</p>
+            </div>
+
+            <!--volatility metric-->
+            <div class="metric-box">
+                <p class="metric-label">Volatility</p>
+                <p class="metric-value" id="market-volatility">–</p>
+            </div>
+        </div>
+
+        <!--note explaining future use of real market data-->
+        <p class="note">
+            Later this will use real Binance OHLCV data and feed into the model.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!--loads javascript that controls the markets demo behaviour-->
+<script src="{{ url_for('static', filename='css/js/markets.js') }}"></script>
+{% endblock %}

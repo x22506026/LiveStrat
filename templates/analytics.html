@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+<!--extends the base layout so the analytics page shares same sidebar and structure-->
+
+{% block title %}Analytics | LiveStrat{% endblock %}
+<!--sets the page title shown in the browser tab-->
+
+{% block extra_css %}
+<!--loads th page specific styling for the analytics layout-->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+<!--main content area for the analytics page-->
+<div class="page-header">
+    <!--page heading and short description-->
+    <h1>Analytics</h1>
+    <p>Small example of how the project will use data and sentiment.</p>
+</div>
+
+<div class="analytics-layout">
+    <!--controls card for selecting an asset and running the demo analysis-->
+    <div class="card analytics-controls">
+        <div>
+            <!--dropdown for choosing which asset to analyse-->
+            <label for="analytics-asset">Asset</label>
+            <select id="analytics-asset">
+                <option value="BTC">Bitcoin</option>
+                <option value="ETH">Ethereum</option>
+            </select>
+        </div>
+
+        <!--button that triggers the demo analysis logic in javascript-->
+        <button id="analytics-run">Run demo analysis</button>
+    </div>
+
+    <!--results card showing the analytics summary and metrics-->
+    <div class="card">
+        <h2>Summary</h2>
+
+        <!--text summary updated dynamically by javascript-->
+        <p id="analytics-summary" class="note">
+            Choose an asset to see a simple analysis summary.
+        </p>
+
+        <!--grid layout for displaying analytics metrics-->
+        <div class="metrics-grid">
+            <!--mean return metric-->
+            <div class="metric-box">
+                <p class="metric-label">Mean return</p>
+                <p class="metric-value" id="analytics-mean">–</p>
+            </div>
+
+            <!--volatility metric-->
+            <div class="metric-box">
+                <p class="metric-label">Volatility</p>
+                <p class="metric-value" id="analytics-volatility">–</p>
+            </div>
+
+            <!--sentiment influence metric-->
+            <div class="metric-box">
+                <p class="metric-label">Sentiment effect</p>
+                <p class="metric-value" id="analytics-sentiment">–</p>
+            </div>
+        </div>
+
+        <!--note explaining that values are placeholders at midpoint-->
+        <p class="note">
+            Later these will be real numbers from historical data and sentiment features.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!--loads javascript that handles the demo analytics behaviour-->
+<script src="{{ url_for('static', filename='css/js/analytics.js') }}"></script>
+{% endblock %}

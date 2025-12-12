@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--sets character encoding for the page-->
+    <meta charset="UTF-8">
+
+    <!--page title shown in the browser tab-->
+    <title>Create Account</title>
+
+    <!--loads the same styles used for login to keep consistency-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+
+<body>
+    <!--container holding the signup form-->
+    <div class="login-container">
+        <!--page heading-->
+        <h2>Create Your Account</h2>
+
+        <!--signup form that submits new user details to the backend-->
+        <form action="{{ url_for('signup_user') }}" method="POST">
+            <!--username input field-->
+            <input type="text" placeholder="Choose Username" required>
+
+            <!--password input field-->
+            <input type="password" placeholder="Choose Password" required>
+
+            <!--submit button for creating an account-->
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <!--link back to the login page for existing users-->
+        <p>Already registered?
+            <a href="{{ url_for('login') }}">Log in</a>
+        </p>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
