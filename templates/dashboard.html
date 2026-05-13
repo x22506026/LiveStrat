@@ -1,95 +1,199 @@
 {% extends "base.html" %}
-<!--uses the base layout so the dashboard shares the same sidebar and structure-->
 
 {% block title %}Dashboard | LiveStrat{% endblock %}
-<!--sets the page title for the dashboard-->
 
 {% block extra_css %}
-<!--loads page-specific styles for the dashboard layout-->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
 {% block content %}
-<!--main content area for the dashboard-->
-<div class="page-header">
-    <!--page heading and short description-->
-    <h1>Dashboard</h1>
-    <p>Quick view of the market, sentiment and current model idea.</p>
-</div>
-
-<div class="dashboard-grid">
-    <!--card showing a simple market trend demo-->
-    <div class="card">
-        <h2>Market Trend</h2>
-        <p class="note">Small demo based on the asset you pick.</p>
-
-        <!--asset selector for trend demo-->
-        <label for="trend-asset">Asset</label>
-        <select id="trend-asset">
-            <option value="BTCUSDT">BTC / USDT</option>
-            <option value="ETHUSDT">ETH / USDT</option>
-            <option value="SOLUSDT">SOL / USDT</option>
-        </select>
-
-        <!--trend output updated by javascript-->
-        <div style="margin-top:10px;">
-            <p class="metric-label">Trend</p>
-            <p class="metric-value" id="trend-status">Neutral</p>
-        </div>
-    </div>
-
-    <!--card showing a simple sentiment demo-->
-    <div class="card">
-        <h2>Sentiment</h2>
-        <p class="note">Rough idea using Reddit and Twitter in the future.</p>
-
-        <!--asset selector for sentiment demo-->
-        <label for="sentiment-asset">Asset</label>
-        <select id="sentiment-asset">
-            <option value="BTC">Bitcoin</option>
-            <option value="ETH">Ethereum</option>
-        </select>
-
-        <!--sentiment score output-->
-        <div style="margin-top:10px;">
-            <p class="metric-label">Score</p>
-            <p class="metric-value" id="sentiment-score">62 / 100</p>
-        </div>
-
-        <!--short text summaries for different sentiment sources-->
-        <p id="reddit-line" class="note">Reddit: mostly positive.</p>
-        <p id="twitter-line" class="note">Twitter: limited data, neutral.</p>
-    </div>
-</div>
-
-<div class="dashboard-bottom">
-    <!--card displaying the overall model verdict-->
-    <div class="card">
-        <h3>Model Verdict</h3>
-        <p class="metric-label">Current verdict</p>
-        <p class="metric-value" id="model-verdict">Hold / Don’t buy</p>
-        <p class="note">Later this will come from the ML model.</p>
-    </div>
-
-    <!--card showing a summary of the last analysis-->
-    <div class="card">
-        <h3>Last Analysis</h3>
-        <p id="analysis-summary">
-            Example: BTC, 4h view, normal volatility and slightly positive mood.
+<section class="dashboard-hero">
+    <div>
+        <p class="dashboard-kicker">Market overview</p>
+        <h2>Tracked assets and recent market movement</h2>
+        <p class="dashboard-subtitle">
+            Each card below shows the live price, 24-hour move, and the current LiveStrat signal. Click any card for the full evidence.
         </p>
     </div>
+    <a class="journey-card" href="{{ url_for('start_here') }}">
+        <span>New to LiveStrat?</span>
+        <strong>See how to use it</strong>
+        <small>A short walk through the dashboard, strategies, and evidence sections.</small>
+    </a>
+</section>
 
-    <!--card showing the most recent notification example-->
-    <div class="card">
-        <h3>Latest Notification</h3>
-        <p id="latest-notification">
-            Example: “If BTC closes above a key level with good sentiment, send a buy alert.”
-        </p>
+<section class="dashboard-asset-strip" id="dashboard-asset-strip">
+    {% for symbol in market_symbols %}
+    {% set summary = market_summaries.get(symbol, {}) %}
+    {% set latest_close = summary.get('latest_close', 0)|float %}
+    {% set latest_return_24h = summary.get('latest_return_24h_pct', 0)|float %}
+    {% set has_market_data = latest_close > 0 and summary.get('current_pipeline_mode') != 'pending_refresh' %}
+    {% set raw_signal = summary.get('selected_primary_signal', summary.get('latest_signal', '')) %}
+    {% set signal_label = 'BUY' if raw_signal in ['buy','long'] else ('AVOID' if raw_signal in ['dont_buy','do_not_buy','sell','short'] else ('HOLD' if raw_signal in ['hold','flat'] else '')) %}
+    {% set signal_class = 'asset-signal-buy' if signal_label == 'BUY' else ('asset-signal-avoid' if signal_label == 'AVOID' else ('asset-signal-hold' if signal_label == 'HOLD' else 'asset-signal-na')) %}
+    <a href="{{ url_for('strategies') }}" class="asset-strip-card-link" data-symbol="{{ symbol }}">
+    <article class="asset-strip-card {% if not has_market_data %}asset-strip-card-pending{% endif %}" data-symbol="{{ symbol }}">
+        <div class="asset-strip-top">
+            <div>
+                <p class="asset-strip-symbol">{{ symbol.replace('USDT', ' / USD') }}</p>
+                {% if has_market_data %}
+                <strong class="asset-strip-price">{{ "%.2f"|format(latest_close) }}</strong>
+                {% else %}
+                <strong class="asset-strip-price asset-strip-price-pending">Pending refresh</strong>
+                {% endif %}
+            </div>
+            {% if has_market_data %}
+            <p class="asset-strip-change {{ 'is-negative' if latest_return_24h < 0 else 'is-positive' }}">
+                {{ "%+.2f"|format(latest_return_24h) }}% 24h
+            </p>
+            {% else %}
+            <p class="asset-strip-change asset-strip-change-pending">n/a</p>
+            {% endif %}
+        </div>
+        <div class="asset-strip-chart" id="asset-chart-{{ symbol }}"></div>
+        <div class="asset-strip-footer">
+            <p class="asset-strip-meta">
+                {% if has_market_data %}Binance spot · 4h view{% else %}Run pipeline refresh{% endif %}
+            </p>
+            {% if has_market_data and signal_label %}
+            <span class="asset-signal-pill {{ signal_class }}">{{ signal_label }}</span>
+            {% endif %}
+        </div>
+    </article>
+    </a>
+    {% endfor %}
+</section>
+
+<section class="dashboard-today-section">
+    <div class="section-heading">
+        <div>
+            <h2>Today's market read</h2>
+            <p class="note">A quick summary of where the tracked basket stands right now.</p>
+        </div>
     </div>
-</div>
+    <div class="dashboard-today-grid">
+        <article class="today-card today-card-signals">
+            <p class="today-label">Signals across the basket</p>
+            <div class="today-signal-tally" id="today-signal-tally">
+                <span class="tally-pill tally-buy"><strong id="today-buy-count">0</strong> Buy</span>
+                <span class="tally-pill tally-hold"><strong id="today-hold-count">0</strong> Hold</span>
+                <span class="tally-pill tally-avoid"><strong id="today-avoid-count">0</strong> Avoid</span>
+            </div>
+            <p class="today-note" id="today-signal-note">Looking across the seven tracked assets.</p>
+        </article>
+
+        <article class="today-card">
+            <p class="today-label">24h leader</p>
+            <p class="today-value" id="today-leader-asset">n/a</p>
+            <p class="today-value-sub is-positive" id="today-leader-change">n/a</p>
+            <p class="today-note" id="today-leader-note">Biggest gainer across the tracked assets in the last 24 hours.</p>
+        </article>
+
+        <article class="today-card">
+            <p class="today-label">Strongest signal</p>
+            <p class="today-value" id="today-conf-asset">n/a</p>
+            <p class="today-value-sub" id="today-conf-value">n/a</p>
+            <p class="today-note" id="today-conf-note">Asset with the highest current model confidence behind its signal.</p>
+        </article>
+
+        <article class="today-card">
+            <p class="today-label">Data freshness</p>
+            <p class="today-value" id="today-freshness-value">Checking…</p>
+            <p class="today-value-sub" id="today-freshness-window">n/a</p>
+            <p class="today-note" id="today-freshness-note">How recent the saved evaluation runs are. Older windows reduce signal confidence.</p>
+        </article>
+    </div>
+</section>
+
+<section class="dashboard-featured-section">
+    <div class="section-heading">
+        <div>
+            <h2>Featured asset</h2>
+            <p class="note">A closer look at the lead asset with current price action and LiveStrat's signal.</p>
+        </div>
+        <div class="featured-asset-toggle" id="featured-asset-toggle"></div>
+    </div>
+    <div class="featured-asset-grid">
+        <article class="featured-asset-card">
+            <div class="featured-asset-top">
+                <div>
+                    <p class="featured-asset-symbol" id="featured-symbol">BTC / USDT</p>
+                    <p class="featured-asset-name" id="featured-name">Bitcoin</p>
+                </div>
+                <div class="featured-asset-price-block">
+                    <p class="featured-price" id="featured-price">n/a</p>
+                    <p class="featured-change" id="featured-change">n/a</p>
+                </div>
+            </div>
+            <div class="featured-chart" id="featured-chart"></div>
+            <p class="featured-read" id="featured-read">
+                Loading market read for the lead asset.
+            </p>
+        </article>
+
+        <article class="featured-signal-card">
+            <p class="featured-label">Current signal</p>
+            <div class="featured-verdict verdict-badge-hold" id="featured-verdict">
+                <span id="featured-verdict-text">HOLD</span>
+            </div>
+            <div class="featured-conf">
+                <div class="featured-conf-top">
+                    <span>Confidence</span>
+                    <strong id="featured-conf-value">n/a</strong>
+                </div>
+                <div class="featured-conf-track">
+                    <span class="featured-conf-fill" id="featured-conf-fill" style="width: 0%"></span>
+                </div>
+            </div>
+            <div class="featured-walkforward-strip" id="featured-walkforward-strip">
+                <div class="featured-wf-stat">
+                    <span class="featured-wf-label" title="Number of expanding-window walk-forward folds the model was retrained over.">Walk-forward folds</span>
+                    <strong class="featured-wf-value" id="featured-wf-folds">n/a</strong>
+                </div>
+                <div class="featured-wf-stat">
+                    <span class="featured-wf-label" title="Average Sharpe across walk-forward folds. More honest than a single-window in-sample figure.">Walk-forward Sharpe</span>
+                    <strong class="featured-wf-value" id="featured-wf-sharpe">n/a</strong>
+                </div>
+            </div>
+            <a class="featured-cta" href="{{ url_for('strategies') }}">See full evidence</a>
+        </article>
+    </div>
+</section>
+
+<section class="dashboard-data-status">
+    <div class="section-heading">
+        <div>
+            <h2>Data freshness</h2>
+            <p class="note">When the saved pipeline runs were last generated. Older runs automatically lower signal confidence.</p>
+        </div>
+        <span class="badge" id="dashboard-data-status-badge">Checking</span>
+    </div>
+    <div class="data-status-grid">
+        <article class="data-status-card">
+            <p class="metric-label">Saved model run</p>
+            <p class="data-status-value" id="dashboard-generated-window">Loading</p>
+            <p class="note" id="dashboard-generated-note">The latest generated pipeline window will appear here.</p>
+        </article>
+        <article class="data-status-card">
+            <p class="metric-label">Timeframe coverage</p>
+            <div class="refresh-lane-stack" id="dashboard-refresh-lanes">
+                <p class="note">Checking timeframe coverage...</p>
+            </div>
+        </article>
+        <article class="data-status-card live-check-card">
+            <p class="metric-label">Live price check</p>
+            <p class="data-status-value" id="dashboard-live-price">Not checked</p>
+            <p class="note" id="dashboard-live-note">Fetch the latest Binance spot price without running the full model pipeline.</p>
+            <button type="button" id="dashboard-live-check">Check latest price</button>
+        </article>
+    </div>
+</section>
+
+<p id="trend-status" hidden>{{ selected_summary.get('trend_status', 'n/a')|title }}</p>
+<p id="mood-summary" hidden>{{ sentiment_summary.get('sentiment_summary', '')|default('', true) }}</p>
 {% endblock %}
 
 {% block extra_js %}
-<!--loads javascript that controls the dashboard demo behaviour-->
+<script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
 <script src="{{ url_for('static', filename='css/js/dashboard.js') }}"></script>
 {% endblock %}

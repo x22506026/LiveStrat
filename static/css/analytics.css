@@ -1,15 +1,671 @@
-/*this file defines the layout for the analytics page*/
+/* ============================================================
+   LiveStrat - Analytics page
+   Methodology, evidence, and academic ablation story.
+   ============================================================ */
 
-.analytics-layout {
-    /*creates a two-column layout with controls on the left and results on the right*/
+/* --- Toolbar (matches dashboard/strategies/markets) --- */
+
+.analytics-toolbar {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+    gap: 24px;
+    align-items: end;
+    padding: 22px 26px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 22px;
+}
+
+.toolbar-kicker {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #0c7c4d;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.toolbar-copy h2 {
+    font-size: 1.55rem;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 6px;
+}
+
+.toolbar-copy .note {
+    margin: 0;
+    max-width: 540px;
+}
+
+.toolbar-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.toolbar-field label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.toolbar-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: #ffffff;
+    font-size: 0.95rem;
+}
+
+.toolbar-action {
+    padding: 11px 18px;
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.toolbar-action:hover {
+    background: var(--primary-strong);
+}
+
+.toolbar-action-secondary {
+    background: #ffffff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.toolbar-action-secondary:hover {
+    background: #f4fbf7;
+    color: var(--primary-strong);
+}
+
+/* --- Methodology section --- */
+
+.methodology-section,
+.evaluation-hero-section,
+.ablation-section,
+.cost-sensitivity-section,
+.limitations-section,
+.recent-chart-section,
+.evidence-tables-section {
+    margin-bottom: 24px;
+    padding: 24px 26px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.section-heading h2 {
+    font-size: 1.4rem;
+    letter-spacing: -0.025em;
+    margin-bottom: 4px;
+}
+
+.methodology-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.method-card {
+    padding: 20px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #f4fbf7 0%, #ffffff 100%);
+    border: 1px solid rgba(0, 139, 90, 0.18);
+    display: grid;
+    gap: 8px;
+    align-content: start;
+}
+
+.method-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+
+.method-card h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+    color: #075c3a;
+}
+
+.method-card p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+/* --- Evaluation hero --- */
+
+.eval-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.3fr);
     gap: 18px;
 }
 
-.analytics-controls {
-    /*stacks the analytics controls vertically with spacing*/
+.eval-hero-card,
+.eval-stats-card {
+    padding: 22px 24px;
+    border-radius: 14px;
+    background: var(--bg-card-muted);
+    border: 1px solid var(--border);
+}
+
+.eval-label {
+    margin: 0 0 10px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.eval-hero-card h3 {
+    margin: 0 0 16px;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+}
+
+.eval-hero-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 14px;
+}
+
+.eval-hero-meta .metric-label {
+    margin: 0 0 4px;
+    font-size: 0.7rem;
+}
+
+.eval-hero-meta p:not(.metric-label) {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.eval-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.eval-stats-grid > div {
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.eval-stats-grid span {
+    display: block;
+    margin: 0 0 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.eval-stats-grid strong {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* --- Ablation section --- */
+
+.ablation-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.ablation-card {
+    padding: 16px 14px;
+    border-radius: 12px;
+    background: var(--bg-card-muted);
+    border: 1px solid var(--border);
+    display: grid;
+    gap: 4px;
+    text-align: left;
+}
+
+.ablation-card-full {
+    background: linear-gradient(180deg, #e3f7ec 0%, #f4fbf7 100%);
+    border-color: rgba(0, 139, 90, 0.3);
+}
+
+.ablation-rank {
+    margin: 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0c7c4d;
+    font-weight: 800;
+}
+
+.ablation-card h4 {
+    margin: 4px 0 0;
+    font-size: 0.98rem;
+    letter-spacing: -0.015em;
+}
+
+.ablation-desc {
+    margin: 4px 0 0;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.ablation-evidence {
+    margin-top: 8px;
+}
+
+.ablation-evidence .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ablation-evidence .metric-box {
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+}
+
+.ablation-evidence .metric-label {
+    margin: 0 0 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.ablation-evidence .metric-value {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.ablation-note {
+    padding: 14px 16px;
+    border-radius: 10px;
+    border-left: 3px solid var(--primary);
+    background: #f4fbf7;
+}
+
+.ablation-note p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.6;
+    font-size: 0.92rem;
+}
+
+/* --- Cost sensitivity --- */
+
+.cost-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.cost-card {
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: var(--bg-card-muted);
+    border: 1px solid var(--border);
+    display: grid;
+    gap: 8px;
+}
+
+.cost-card h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: -0.015em;
+}
+
+.cost-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+
+.cost-table th, .cost-table td {
+    padding: 6px 8px;
+    text-align: right;
+}
+
+.cost-table th:first-child, .cost-table td:first-child {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.cost-table tbody tr {
+    border-top: 1px dashed var(--border);
+}
+
+.cost-row-positive { color: #0d7c4e; }
+.cost-row-negative { color: #b84b4b; }
+
+/* --- Limitations --- */
+
+.limitations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.limitation-card {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #fafbfa;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    display: grid;
+    gap: 6px;
+}
+
+.limitation-card .limitation-category {
+    margin: 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #087346;
+    font-weight: 700;
+}
+
+.limitation-card h4 {
+    margin: 0;
+    font-size: 0.98rem;
+    letter-spacing: -0.015em;
+}
+
+.limitation-card p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    max-height: 4.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.limitation-card details {
+    margin-top: 4px;
+}
+
+.limitation-card details summary {
+    cursor: pointer;
+    font-size: 0.78rem;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.limitation-card details[open] p {
+    max-height: none;
+    -webkit-line-clamp: none;
+}
+
+/* --- Recent chart section --- */
+
+.recent-chart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.9fr);
+    gap: 18px;
+}
+
+.chart-card,
+.pulse-card {
+    padding: 20px 22px;
+    border-radius: 14px;
+    background: var(--bg-card-muted);
+    border: 1px solid var(--border);
+}
+
+.analytics-chart {
+    min-height: 200px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(0, 139, 90, 0.04), rgba(0, 139, 90, 0.01));
+    border: 1px solid #e1ebe5;
+}
+
+.analytics-chart svg {
+    width: 100%;
+    height: 200px;
+    display: block;
+}
+
+.analytics-chart-guide {
+    stroke: rgba(0, 139, 90, 0.2);
+    stroke-dasharray: 3 4;
+    stroke-width: 1;
+}
+
+.analytics-chart-label {
+    font-size: 10px;
+    fill: var(--text-muted);
+}
+
+.analytics-chart-volume {
+    fill: rgba(0, 139, 90, 0.15);
+}
+
+.pulse-card {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
+}
+
+.pulse-row {
+    display: grid;
+    gap: 6px;
+}
+
+.pulse-row > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.pulse-row span {
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.pulse-row strong {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.pulse-bar {
+    height: 6px;
+    background: #eef2f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.pulse-bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #009b63 0%, #00c989 100%);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+/* --- Evidence tables --- */
+
+.evidence-table-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 18px;
+}
+
+.evidence-table-card {
+    padding: 20px 22px;
+    border-radius: 14px;
+    background: var(--bg-card-muted);
+    border: 1px solid var(--border);
+}
+
+.evidence-table-card h3 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+}
+
+.evidence-table-note {
+    margin: 0 0 12px;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
+.analytics-table-wrap {
+    max-height: 360px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.analytics-evidence-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.analytics-evidence-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f4fbf7;
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #0c7c4d;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+}
+
+.analytics-evidence-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f3f1;
+    vertical-align: top;
+}
+
+.analytics-evidence-table tbody tr:hover {
+    background: #f9fcfb;
+}
+
+/* --- Extra technical details (collapsible) --- */
+
+.analytics-details {
+    margin-bottom: 24px;
+    padding: 16px 22px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fafbfa;
+}
+
+.analytics-details summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #087346;
+    font-size: 0.94rem;
+}
+
+.analytics-extra-grid {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.analytics-extra-grid .metric-box {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.analytics-extra-grid .metric-label {
+    margin: 0 0 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.analytics-extra-grid .metric-value {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+}
+
+.analytics-metric-text {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* --- Responsive --- */
+
+@media (max-width: 980px) {
+    .analytics-toolbar,
+    .eval-hero-grid,
+    .recent-chart-grid {
+        grid-template-columns: 1fr;
+    }
 }

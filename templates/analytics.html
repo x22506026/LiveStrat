@@ -1,77 +1,388 @@
 {% extends "base.html" %}
-<!--extends the base layout so the analytics page shares same sidebar and structure-->
 
 {% block title %}Analytics | LiveStrat{% endblock %}
-<!--sets the page title shown in the browser tab-->
 
 {% block extra_css %}
-<!--loads th page specific styling for the analytics layout-->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
 {% endblock %}
 
 {% block content %}
-<!--main content area for the analytics page-->
-<div class="page-header">
-    <!--page heading and short description-->
-    <h1>Analytics</h1>
-    <p>Small example of how the project will use data and sentiment.</p>
-</div>
-
-<div class="analytics-layout">
-    <!--controls card for selecting an asset and running the demo analysis-->
-    <div class="card analytics-controls">
-        <div>
-            <!--dropdown for choosing which asset to analyse-->
+<section class="analytics-toolbar">
+    <div class="toolbar-copy">
+        <p class="toolbar-kicker">Evidence and analytics</p>
+        <h2>How LiveStrat strategies are validated, and what the evidence says.</h2>
+        <p class="note">Each strategy is tested with chronological splits, walk-forward folds, and multiple performance metrics. None of the methods peek at future data.</p>
+    </div>
+    <div class="toolbar-controls">
+        <div class="toolbar-field">
             <label for="analytics-asset">Asset</label>
             <select id="analytics-asset">
-                <option value="BTC">Bitcoin</option>
-                <option value="ETH">Ethereum</option>
+                {% for symbol in market_symbols %}
+                <option value="{{ symbol }}" {% if symbol == selected_symbol %}selected{% endif %}>
+                    {{ symbol.replace('USDT', ' / USDT') }}
+                </option>
+                {% endfor %}
             </select>
         </div>
+        <div class="toolbar-field">
+            <label for="analytics-timeframe">Timeframe</label>
+            <select id="analytics-timeframe">
+                <option value="1h">1 hour</option>
+                <option value="4h" selected>4 hours</option>
+            </select>
+        </div>
+        <button id="analytics-run" type="button" class="toolbar-action">Refresh view</button>
+    </div>
+</section>
 
-        <!--button that triggers the demo analysis logic in javascript-->
-        <button id="analytics-run">Run demo analysis</button>
+<section class="methodology-section">
+    <div class="section-heading">
+        <div>
+            <h2>How the strategies are validated</h2>
+            <p class="note">The four pillars of LiveStrat's evaluation methodology.</p>
+        </div>
+    </div>
+    <div class="methodology-grid">
+        <article class="method-card">
+            <div class="method-icon">1</div>
+            <h3>Time-aware splits</h3>
+            <p>Data is split chronologically into four time-aware partitions: train, calibrate, validate, and test. No shuffling and no future leakage; every fold respects the arrow of time.</p>
+        </article>
+        <article class="method-card">
+            <div class="method-icon">2</div>
+            <h3>Walk-forward folds</h3>
+            <p>The model is retrained on an expanding window as new candles arrive. Each fold's test set is data the model has never seen during training.</p>
+        </article>
+        <article class="method-card">
+            <div class="method-icon">3</div>
+            <h3>Multiple metrics</h3>
+            <p>Strategies are scored on accuracy, balanced accuracy, macro-F1, Sharpe ratio, max drawdown, and excess return over buy-and-hold. Accuracy alone is misleading.</p>
+        </article>
+        <article class="method-card">
+            <div class="method-icon">4</div>
+            <h3>Ablation study</h3>
+            <p>Each data source (futures, news, on-chain, TVL) is added in sequence to measure its individual contribution. The output is honest about which layers actually help and which do not.</p>
+        </article>
+    </div>
+</section>
+
+<section class="evaluation-hero-section">
+    <div class="section-heading">
+        <div>
+            <h2>Current evaluation</h2>
+            <p class="note" id="analytics-refresh-note">Loading evaluation summary for the selected asset and timeframe.</p>
+        </div>
     </div>
 
-    <!--results card showing the analytics summary and metrics-->
-    <div class="card">
-        <h2>Summary</h2>
+    <div class="eval-hero-grid">
+        <article class="eval-hero-card">
+            <p class="eval-label">Quick read</p>
+            <h3 id="analytics-summary">Loading evaluation summary…</h3>
+            <div class="eval-hero-meta">
+                <div>
+                    <p class="metric-label">Active asset</p>
+                    <p id="analytics-active-asset">{{ selected_symbol.replace('USDT', ' / USDT') if selected_symbol else 'BTC / USDT' }}</p>
+                </div>
+                <div>
+                    <p class="metric-label">Current signal</p>
+                    <p id="analytics-current-signal">{{ selected_summary.get('selected_primary_signal', 'n/a')|replace('_', ' ')|title }}</p>
+                </div>
+                <div>
+                    <p class="metric-label">Strategy reliability</p>
+                    <p id="analytics-readiness">Loading</p>
+                </div>
+            </div>
+        </article>
 
-        <!--text summary updated dynamically by javascript-->
-        <p id="analytics-summary" class="note">
-            Choose an asset to see a simple analysis summary.
-        </p>
+        <article class="eval-stats-card">
+            <p class="eval-label">Held-out evidence</p>
+            <div class="eval-stats-grid">
+                <div>
+                    <span class="metric-label" title="Classification accuracy on the held-out test set: how often the model's directional call was correct on unseen data.">Accuracy</span>
+                    <strong id="analytics-scaled-accuracy">{{ "%.1f"|format((selected_summary.get('test_accuracy', selected_summary.get('baseline_scaled_test_accuracy', 0))|float) * 100) }}%</strong>
+                </div>
+                <div>
+                    <span class="metric-label" title="Average per-class recall. Fairer than raw accuracy when the buy/hold/avoid classes are unbalanced.">Balanced acc.</span>
+                    <strong id="analytics-rule-accuracy">{{ "%.1f"|format((selected_summary.get('test_balanced_accuracy', 0)|float) * 100) }}%</strong>
+                </div>
+                <div>
+                    <span class="metric-label" title="Total return from following the strategy's policy over the evaluation window, with trading costs deducted.">Policy return</span>
+                    <strong id="analytics-policy-return">{{ "%.1f"|format((selected_summary.get('strategy_total_return', 0)|float) * 100) }}%</strong>
+                </div>
+                <div>
+                    <span class="metric-label" title="Total return from simply holding the asset over the same window.">Buy & hold</span>
+                    <strong id="analytics-buy-hold-return">{{ "%.1f"|format((selected_summary.get('buy_hold_total_return', 0)|float) * 100) }}%</strong>
+                </div>
+                <div>
+                    <span class="metric-label" title="Average Sharpe ratio across walk-forward folds. The fold count is shown below; this is a more honest figure than a single-window in-sample Sharpe.">Walk-forward Sharpe</span>
+                    <strong id="analytics-sharpe">{{ "%.2f"|format(selected_summary.get('walkforward_avg_sharpe', selected_summary.get('sharpe_ratio', 0))|float) }}</strong>
+                </div>
+                <div>
+                    <span class="metric-label" title="Worst peak-to-trough drawdown experienced by the strategy during the evaluation window.">Max drawdown</span>
+                    <strong id="analytics-max-drawdown">{{ "%.1f"|format((selected_summary.get('max_drawdown', 0)|float) * 100) }}%</strong>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
 
-        <!--grid layout for displaying analytics metrics-->
+<section class="ablation-section">
+    <div class="section-heading">
+        <div>
+            <h2>Does each data source help?</h2>
+            <p class="note">Adding data sources one at a time to see which actually improves model performance. This is the academic core of the project.</p>
+        </div>
+    </div>
+
+    <div class="ablation-cards">
+        <article class="ablation-card">
+            <p class="ablation-rank">Baseline</p>
+            <h4>Market only</h4>
+            <p class="ablation-desc">Spot price, volume, volatility, taker flow.</p>
+        </article>
+        <article class="ablation-card">
+            <p class="ablation-rank">+1</p>
+            <h4>+ Futures structure</h4>
+            <p class="ablation-desc">Funding rate, open interest, long/short ratio, basis.</p>
+        </article>
+        <article class="ablation-card">
+            <p class="ablation-rank">+2</p>
+            <h4>+ Fear &amp; Greed</h4>
+            <p class="ablation-desc">Broad crypto mood baseline.</p>
+        </article>
+        <article class="ablation-card">
+            <p class="ablation-rank">+3</p>
+            <h4>+ GDELT news</h4>
+            <p class="ablation-desc">Asset-specific news sentiment.</p>
+        </article>
+        <article class="ablation-card">
+            <p class="ablation-rank">+4</p>
+            <h4>+ On-chain</h4>
+            <p class="ablation-desc">Network telemetry from Coin Metrics.</p>
+        </article>
+        <article class="ablation-card ablation-card-full">
+            <p class="ablation-rank">Full</p>
+            <h4>Full multimodal</h4>
+            <p class="ablation-desc">All layers combined under one engine.</p>
+        </article>
+    </div>
+
+    <div class="ablation-evidence">
         <div class="metrics-grid">
-            <!--mean return metric-->
             <div class="metric-box">
-                <p class="metric-label">Mean return</p>
-                <p class="metric-value" id="analytics-mean">–</p>
+                <p class="metric-label" title="The strongest context-aware variant identified by validation for this asset and timeframe.">Best variant</p>
+                <p class="metric-value analytics-metric-text" id="analytics-ablation-best-variant">Loading</p>
             </div>
-
-            <!--volatility metric-->
             <div class="metric-box">
-                <p class="metric-label">Volatility</p>
-                <p class="metric-value" id="analytics-volatility">–</p>
+                <p class="metric-label" title="Macro-F1 score of the best context-aware variant on held-out data.">Best macro-F1</p>
+                <p class="metric-value" id="analytics-ablation-best-macro-f1">{{ "%.1f"|format((selected_summary.get('ablation_best_macro_f1', 0)|float) * 100) }}%</p>
             </div>
-
-            <!--sentiment influence metric-->
             <div class="metric-box">
-                <p class="metric-label">Sentiment effect</p>
-                <p class="metric-value" id="analytics-sentiment">–</p>
+                <p class="metric-label" title="Macro-F1 of the market+futures backbone alone (the benchmark to beat).">Market + futures macro-F1</p>
+                <p class="metric-value" id="analytics-ablation-base-macro-f1">{{ "%.1f"|format((selected_summary.get('ablation_market_futures_macro_f1', 0)|float) * 100) }}%</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="Macro-F1 improvement from adding context layers on top of market+futures. Positive = context helped.">Improvement</p>
+                <p class="metric-value" id="analytics-ablation-delta">{{ "%.1f"|format((selected_summary.get('delta_macro_f1_vs_market_futures', 0)|float) * 100) }}%</p>
             </div>
         </div>
-
-        <!--note explaining that values are placeholders at midpoint-->
-        <p class="note">
-            Later these will be real numbers from historical data and sentiment features.
-        </p>
+        <div class="ablation-note">
+            <p id="analytics-ablation-detail">{{ selected_summary.get('ablation_summary', 'Ablation summary will load for the selected asset and timeframe.') }}</p>
+        </div>
     </div>
+</section>
+
+<section class="recent-chart-section">
+    <div class="section-heading">
+        <div>
+            <h2>Recent market context</h2>
+            <p class="note">Recent price action for the selected asset. Background context only; strategy decisions are made on the Strategies tab.</p>
+        </div>
+    </div>
+    <div class="recent-chart-grid">
+        <article class="chart-card">
+            <div id="analytics-chart" class="analytics-chart"></div>
+            <p class="note" id="analytics-chart-caption">Recent market chart will appear here.</p>
+        </article>
+        <article class="pulse-card">
+            <div class="pulse-row">
+                <div>
+                    <span>Trend move</span>
+                    <strong id="analytics-pulse-trend">n/a</strong>
+                </div>
+                <div class="pulse-bar"><span id="analytics-pulse-trend-bar"></span></div>
+            </div>
+            <div class="pulse-row">
+                <div>
+                    <span>Price range</span>
+                    <strong id="analytics-pulse-range">n/a</strong>
+                </div>
+                <div class="pulse-bar"><span id="analytics-pulse-range-bar"></span></div>
+            </div>
+            <div class="pulse-row">
+                <div>
+                    <span>Volume activity</span>
+                    <strong id="analytics-pulse-volume">n/a</strong>
+                </div>
+                <div class="pulse-bar"><span id="analytics-pulse-volume-bar"></span></div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="evidence-tables-section">
+    <div class="section-heading">
+        <div>
+            <h2>Evidence across all assets</h2>
+            <p class="note" id="analytics-evidence-summary">Strategy outputs and model evaluation results for every tracked asset.</p>
+        </div>
+        <a class="toolbar-action toolbar-action-secondary" id="analytics-evidence-export" href="/api/evaluation-evidence?timeframe=4h&format=csv">Export CSV</a>
+    </div>
+
+    <div class="evidence-table-grid">
+        <article class="evidence-table-card">
+            <h3>Strategy outputs</h3>
+            <p class="evidence-table-note">Each row shows the current signal and predicted move for one of the five user-facing strategies, per asset.</p>
+            <div class="analytics-table-wrap">
+                <table class="analytics-evidence-table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Strategy</th>
+                            <th>Signal</th>
+                            <th>Score</th>
+                            <th>Pred. move</th>
+                            <th>Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="analytics-strategy-evidence-body">
+                        <tr><td colspan="6">Loading strategy evidence...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="evidence-table-card">
+            <h3>Deep learning evidence</h3>
+            <p class="evidence-table-note">LSTM model results per asset, evaluated using the same chronological held-out method.</p>
+            <div class="analytics-table-wrap">
+                <table class="analytics-evidence-table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Model</th>
+                            <th>Accuracy</th>
+                            <th>Macro-F1</th>
+                            <th>Bal. acc.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="analytics-deep-learning-body">
+                        <tr><td colspan="5">Loading LSTM evidence...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+
+<details class="analytics-details">
+    <summary>Show extra technical details</summary>
+    <div class="metrics-grid analytics-extra-grid">
+        <div class="metric-box">
+            <p class="metric-label" title="Number of rolling walk-forward folds used in evaluation.">Walk-forward folds</p>
+            <p class="metric-value" id="analytics-walkforward-folds">{{ selected_summary.get('walkforward_fold_count', 0)|int }}</p>
+        </div>
+        <div class="metric-box">
+            <p class="metric-label" title="Average accuracy across all walk-forward folds.">Walk-forward accuracy</p>
+            <p class="metric-value" id="analytics-walkforward-acc">{{ "%.1f"|format((selected_summary.get('walkforward_avg_accuracy', 0)|float) * 100) }}%</p>
+        </div>
+        <div class="metric-box">
+            <p class="metric-label" title="Average excess return across folds (strategy minus buy-and-hold).">Walk-forward excess</p>
+            <p class="metric-value" id="analytics-walkforward-excess">{{ "%.1f"|format((selected_summary.get('walkforward_avg_excess_return', 0)|float) * 100) }}%</p>
+        </div>
+        <div class="metric-box">
+            <p class="metric-label" title="The active trading policy applied on top of model probabilities.">Policy</p>
+            <p class="metric-value analytics-metric-text" id="analytics-policy-name">{{ selected_summary.get('policy_name', 'n/a') }}</p>
+        </div>
+        <div class="metric-box">
+            <p class="metric-label" title="Whether the model uses raw probabilities or temperature-scaled (calibrated) probabilities.">Probability mode</p>
+            <p class="metric-value analytics-metric-text" id="analytics-probability-mode">{{ selected_summary.get('probability_mode', 'n/a') }}</p>
+        </div>
+        <div class="metric-box">
+            <p class="metric-label" title="Temperature parameter used to recalibrate model confidence.">Calibration temp</p>
+            <p class="metric-value" id="analytics-calibration-temperature">{{ "%.2f"|format(selected_summary.get('calibration_temperature', 0)|float) }}</p>
+        </div>
+    </div>
+    <p class="note" id="analytics-method-summary" style="margin-top: 14px;">
+        These additional fields describe the underlying engine, policy, and calibration settings.
+    </p>
+</details>
+
+<!-- Hidden compatibility fields kept for backwards compatibility with existing JS -->
+<div hidden>
+    <p id="analytics-lane-badge"></p>
+    <p id="analytics-status-signal-box"></p>
+    <p id="analytics-status-readiness-box"></p>
+    <p id="analytics-context-posture"></p>
+    <p id="analytics-target-hours"></p>
+    <p id="analytics-evaluation-strength"></p>
+    <p id="analytics-engine-badge"></p>
+    <p id="analytics-primary-model"></p>
+    <p id="analytics-sentiment-role"></p>
+    <p id="analytics-onchain-role"></p>
+    <p id="analytics-defi-role"></p>
+    <p id="analytics-multimodal-strategy"></p>
+    <p id="analytics-multimodal-context"></p>
+    <p id="analytics-multimodal-signal"></p>
+    <p id="analytics-multimodal-context-variant"></p>
+    <p id="analytics-multimodal-macro-f1"></p>
+    <p id="analytics-multimodal-validation-macro-f1"></p>
+    <p id="analytics-effective-sentiment-source"></p>
+    <p id="analytics-effective-sentiment-label"></p>
+    <p id="analytics-gdelt-regime"></p>
+    <p id="analytics-gdelt-count"></p>
+    <p id="analytics-defi-chain"></p>
+    <p id="analytics-defi-regime"></p>
+    <p id="analytics-multimodal-summary"></p>
+    <p id="analytics-context-governance"></p>
+    <p id="analytics-multimodal-detail"></p>
+    <p id="analytics-backtest-summary"></p>
+    <p id="analytics-source-policy-title"></p>
+    <p id="analytics-source-policy-rationale"></p>
+    <p id="analytics-signal-explainer"></p>
+    <p id="analytics-coverage-market-futures"></p>
+    <p id="analytics-coverage-multimodal"></p>
+    <p id="analytics-coverage-onchain"></p>
+    <p id="analytics-coverage-baselines"></p>
+    <p id="analytics-timeframe-1h"></p>
+    <p id="analytics-timeframe-4h"></p>
+    <p id="analytics-timeframe-1d"></p>
+    <p id="analytics-coverage-summary"></p>
+    <p id="analytics-coverage-detail"></p>
+    <p id="analytics-timeframe-readiness-summary"></p>
+    <p id="analytics-timeframe-readiness-detail"></p>
+    <p id="analytics-family-scope-summary"></p>
+    <p id="analytics-family-scope-detail"></p>
+    <p id="analytics-defensible-comparison"></p>
+    <p id="analytics-ablation-summary"></p>
+    <p id="analytics-context-badge"></p>
+    <p id="analytics-validation-badge"></p>
+    <p id="analytics-what-now"></p>
+    <p id="analytics-why-trust"></p>
+    <p id="analytics-compare-summary"></p>
+    <p id="analytics-compare-left-title"></p>
+    <p id="analytics-compare-left-summary"></p>
+    <p id="analytics-compare-right-title"></p>
+    <p id="analytics-compare-right-summary"></p>
+    <p id="analytics-compare-accuracy-winner"></p>
+    <p id="analytics-compare-return-winner"></p>
+    <p id="analytics-compare-interpretability-winner"></p>
+    <p id="analytics-compare-depth-winner"></p>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!--loads javascript that handles the demo analytics behaviour-->
+<script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
+<script src="{{ url_for('static', filename='css/js/signal_explainer.js') }}"></script>
 <script src="{{ url_for('static', filename='css/js/analytics.js') }}"></script>
 {% endblock %}

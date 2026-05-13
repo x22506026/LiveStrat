@@ -1,39 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!--sets character encoding for the page-->
     <meta charset="UTF-8">
-
-    <!--page title shown in the browser tab-->
-    <title>LiveStrat Login</title>
-
-    <!--loads styles specific to the login page-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in | LiveStrat</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
-
 <body>
-    <!--container holding the login form-->
-    <div class="login-container">
-        <!--page heading-->
-        <h2>Welcome to LiveStrat</h2>
+    <main class="auth-page">
+        <section class="auth-intro">
+            <p class="auth-platform-label">LiveStrat</p>
+            <h1>Evidence-backed cryptocurrency strategy intelligence.</h1>
+            <p class="auth-intro-sub">
+                LiveStrat combines Binance market and futures data with news sentiment, on-chain telemetry, and ecosystem TVL to generate governed strategy signals across seven core assets.
+            </p>
+            <ul class="auth-intro-points">
+                <li><span>01</span> Multi-source data pipeline with explicit role separation</li>
+                <li><span>02</span> Walk-forward validated machine-learning strategies</li>
+                <li><span>03</span> Honest readiness labels: Ready, Partial, Experimental</li>
+            </ul>
+        </section>
 
-        <!--login form that submits credentials to the backend-->
-        <form action="{{ url_for('login_user') }}" method="POST">
-            <!--username input field-->
-            <input type="text" placeholder="Username" required>
+        <section class="auth-access-section">
+            <div class="auth-form-card">
+                <h2>Log in</h2>
+                <p class="auth-note">Access saved strategies, messages, and the latest LiveStrat strategy views.</p>
 
-            <!--password input field-->
-            <input type="password" placeholder="Password" required>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="auth-messages" role="alert">
+                            {% for category, message in messages %}
+                                <p class="auth-message {{ category }}">{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
 
-            <!--submit button for logging in-->
-            <button type="submit">Log In</button>
-        </form>
+                <form action="{{ url_for('login_user') }}" method="POST" class="auth-form">
+                    <div>
+                        <label for="email">Email</label>
+                        <input id="email" type="email" name="email" placeholder="your@email.com" required>
+                    </div>
+                    <div>
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit">Log in</button>
+                </form>
 
-        <!--link to the signup page for new users-->
-        <p>No account? 
-            <a href="{{ url_for('signup') }}">Sign up</a>
-        </p>
-    </div>
+                <div class="auth-footer">
+                    <span>Don't have an account?</span>
+                    <a href="{{ url_for('signup') }}">Sign up</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="offers-section">
+            <div class="offers-heading">
+                <h2>What LiveStrat offers</h2>
+                <p>A focused workspace for checking market history, strategy performance, and the extra context that may support or challenge a trading view.</p>
+            </div>
+            <div class="offers-grid" aria-label="LiveStrat platform features">
+                <article>
+                    <strong>Market history first</strong>
+                    <span>View recent price paths, 24h moves, volatility, activity, and futures structure for the tracked assets.</span>
+                </article>
+                <article>
+                    <strong>Strategy performance</strong>
+                    <span>Use preset strategy pages and evaluation summaries based on saved historical model runs.</span>
+                </article>
+                <article>
+                    <strong>Sentiment and on-chain context</strong>
+                    <span>Check where news, network data, and ecosystem TVL are available, and where the platform should rely mainly on market data.</span>
+                </article>
+                <article>
+                    <strong>Evidence checks</strong>
+                    <span>Review accuracy, returns, rolling validation, source coverage, and data freshness before trusting a signal.</span>
+                </article>
+                <article>
+                    <strong>Saved strategies and messages</strong>
+                    <span>Save structured strategy choices and generate account messages from the same backend summaries.</span>
+                </article>
+            </div>
+        </section>
+    </main>
 </body>
 </html>
-

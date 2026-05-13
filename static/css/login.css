@@ -1,62 +1,361 @@
-/*styles shared by the login and signup pages*/
+:root {
+    --auth-bg: #081a24;
+    --auth-bg-soft: #10281f;
+    --auth-card: #ffffff;
+    --auth-green: #008854;
+    --auth-green-soft: #e8f6ef;
+    --auth-border: #dfe5e2;
+    --auth-text: #071324;
+    --auth-muted: #64748b;
+}
+
+* {
+    box-sizing: border-box;
+}
 
 body {
-    /*sets the base font and centers the login box on the screen*/
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: #e5e7eb;
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", "Inter", "Helvetica Neue", sans-serif;
+    color: #ffffff;
+    background: linear-gradient(180deg, var(--auth-bg) 0%, #0b2d24 42%, #eef1ef 42%, #eef1ef 100%);
+}
+
+.auth-page {
+    width: min(1180px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 54px 0 56px;
+}
+
+.auth-intro {
+    max-width: 940px;
+    margin: 0 0 34px;
+    text-align: left;
+}
+
+.auth-platform-label {
+    margin: 0 0 14px;
+    color: #4cffad;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.auth-intro h1 {
+    margin: 0;
+    max-width: 960px;
+    font-size: clamp(2rem, 3.2vw, 3.05rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+}
+
+.auth-intro p {
+    margin: 18px 0 0;
+    max-width: 850px;
+    color: #a9b9c9;
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.auth-intro-sub {
+    font-size: 1.05rem !important;
+}
+
+.auth-intro-points {
+    list-style: none;
+    margin: 22px 0 0;
+    padding: 0;
     display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.auth-intro-points li {
+    flex: 1 1 220px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid rgba(76, 255, 173, 0.18);
+    border-radius: 10px;
+    background: rgba(76, 255, 173, 0.04);
+    color: #cfe7dc;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.auth-intro-points span {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(76, 255, 173, 0.16);
+    color: #4cffad;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    margin: 0;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
 }
 
-.login-container {
-    /*styles the card that holds the login or signup form*/
-    background: #111827;
+.auth-access-section {
+    margin-top: 28px;
+}
+
+.auth-form-card,
+.benefits-card {
+    border-radius: 8px;
     padding: 32px;
-    border-radius: 12px;
-    width: 320px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    background: var(--auth-card);
+    color: var(--auth-text);
+    box-shadow: 0 16px 32px rgba(6, 31, 22, 0.18);
 }
 
-.login-container h2 {
-    /*styles the heading text*/
-    margin-top: 0;
-    margin-bottom: 16px;
-    text-align: center;
+.auth-form-card {
+    width: 100%;
 }
 
-.login-container form {
-    /*lays out the form fields vertically*/
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.benefits-card {
+    background: #f7faf8;
+    border: 1px solid #d4e1da;
 }
 
-.login-container input {
-    /*styles the input fields*/
-    padding: 10px;
-    border-radius: 6px;
-    border: none;
-    background: #1f2937;
-    color: #e5e7eb;
+.auth-form-card h2,
+.benefits-card h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    letter-spacing: -0.04em;
 }
 
-.login-container button {
-    /*styles the submit button*/
-    padding: 10px;
-    margin-top: 6px;
-    border-radius: 6px;
-    border: none;
-    background: #3b82f6;
-    color: white;
+.auth-note,
+.benefits-card > p {
+    margin: 8px 0 0;
+    color: var(--auth-muted);
+    line-height: 1.55;
+}
+
+.auth-messages {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.auth-message {
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-weight: 700;
+    margin: 0;
+    padding: 12px 14px;
+}
+
+.auth-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 30px;
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: #1e293b;
+    font-weight: 700;
+}
+
+.auth-form input {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 16px;
+    border-radius: 8px;
+    border: 1px solid #cfd8d4;
+    background: #fbfcfc;
+    color: var(--auth-text);
+    font-size: 1rem;
+}
+
+.auth-form button {
+    grid-column: 1 / -1;
+    min-height: 52px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--auth-green);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 800;
     cursor: pointer;
 }
 
-.login-container a {
-    /*styles links below the form*/
-    color: #60a5fa;
+.auth-footer {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e7e4;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    color: var(--auth-muted);
+}
+
+.auth-footer a {
+    color: var(--auth-green);
+    font-weight: 800;
     text-decoration: none;
+}
+
+.benefit-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 28px;
+}
+
+.benefit-list article {
+    padding: 18px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--auth-border);
+    background: #ffffff;
+}
+
+.benefit-list strong,
+.benefit-list span {
+    display: block;
+}
+
+.benefit-list span {
+    margin-top: 6px;
+    color: var(--auth-muted);
+}
+
+.offers-section {
+    margin-top: 34px;
+    padding: 32px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--auth-text);
+    border: 1px solid var(--auth-border);
+    box-shadow: 0 14px 30px rgba(6, 31, 22, 0.10);
+}
+
+.offers-heading {
+    max-width: 780px;
+}
+
+.offers-heading h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    letter-spacing: -0.03em;
+}
+
+.offers-heading p {
+    margin: 10px 0 0;
+    color: var(--auth-muted);
+    line-height: 1.6;
+}
+
+.offers-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 26px;
+}
+
+.offers-grid article {
+    min-height: 150px;
+    padding: 18px;
+    border-radius: 8px;
+    background: #f8faf9;
+    border: 1px solid var(--auth-border);
+}
+
+.offers-grid strong,
+.offers-grid span {
+    display: block;
+}
+
+.offers-grid strong {
+    color: var(--auth-text);
+}
+
+.offers-grid span {
+    margin-top: 8px;
+    color: #334155;
+    line-height: 1.52;
+}
+
+.services-wrapper {
+    margin-top: 48px;
+    color: var(--auth-text);
+    text-align: center;
+}
+
+.services-wrapper h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    letter-spacing: -0.02em;
+}
+
+.services-wrapper > p {
+    margin: 14px 0 0;
+    color: var(--auth-muted);
+    font-size: 1.05rem;
+}
+
+.services-section {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 28px;
+    text-align: left;
+}
+
+.service-card {
+    min-height: 150px;
+    padding: 24px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid var(--auth-border);
+    box-shadow: 0 10px 22px rgba(6, 31, 22, 0.08);
+}
+
+.service-card h3 {
+    margin: 0;
+    color: var(--auth-text);
+    font-size: 1.1rem;
+}
+
+.service-card p {
+    margin: 12px 0 0;
+    color: #334155;
+    line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+    body {
+        background: var(--auth-bg);
+    }
+
+    .auth-intro {
+        margin: 42px auto;
+    }
+
+    .auth-form,
+    .auth-primary-grid,
+    .services-section,
+    .offers-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .auth-page {
+        width: min(100% - 24px, 1180px);
+    }
+
+    .auth-form-card,
+    .benefits-card,
+    .service-card,
+    .offers-section {
+        padding: 22px;
+    }
 }

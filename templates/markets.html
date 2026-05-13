@@ -1,88 +1,177 @@
 {% extends "base.html" %}
-<!--uses the base layout so the markets page shares the same sidebar and structure-->
 
 {% block title %}Markets | LiveStrat{% endblock %}
-<!--sets the page title for the markets page-->
 
 {% block extra_css %}
-<!--loads page-specific styles for the markets layout-->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/markets.css') }}">
 {% endblock %}
 
 {% block content %}
-<!--main content area for the markets page-->
-<div class="page-header">
-    <!--page heading and short description-->
-    <h1>Markets</h1>
-    <p>Pick a coin and see a simple demo of market numbers.</p>
-</div>
-
-<div class="markets-layout">
-    <!--controls card for selecting asset and timeframe-->
-    <div class="card markets-controls">
-        <div>
-            <!--asset selector-->
+<section class="markets-toolbar">
+    <div class="toolbar-copy">
+        <p class="toolbar-kicker">Market reader</p>
+        <h2>Inspect price, behaviour, and what extra context is available.</h2>
+        <p class="note">Strategy decisions and model evidence stay on the Strategies and Analytics tabs.</p>
+    </div>
+    <div class="toolbar-controls">
+        <div class="toolbar-field">
             <label for="market-asset">Asset</label>
             <select id="market-asset">
-                <option value="BTCUSDT">BTC / USDT</option>
-                <option value="ETHUSDT">ETH / USDT</option>
-                <option value="SOLUSDT">SOL / USDT</option>
+                {% for symbol in market_symbols %}
+                <option value="{{ symbol }}" {% if symbol == selected_symbol %}selected{% endif %}>
+                    {{ symbol.replace('USDT', ' / USDT') }}
+                </option>
+                {% endfor %}
             </select>
         </div>
-
-        <div>
-            <!--timeframe selector-->
-            <label for="market-timeframe">Timeframe</label>
+        <div class="toolbar-field">
+            <label for="market-timeframe">Chart view</label>
             <select id="market-timeframe">
                 <option value="1h">1 hour</option>
-                <option value="4h">4 hours</option>
+                <option value="4h" selected>4 hours</option>
                 <option value="1d">1 day</option>
             </select>
         </div>
-
-        <!--button that triggers the market snapshot demo-->
-        <button id="market-generate">Show market snapshot</button>
+        <button id="market-generate" type="button" class="toolbar-action">Refresh view</button>
     </div>
+</section>
 
-    <!--results card showing the market snapshot-->
-    <div class="card">
-        <h2>Snapshot</h2>
-
-        <!--summary text updated dynamically by javascript-->
-        <p id="market-summary" class="note">
-            Choose an asset and timeframe to fill in the fields below.
-        </p>
-
-        <!--grid layout for displaying market metrics-->
-        <div class="metrics-grid">
-            <!--high and low price metric-->
-            <div class="metric-box">
-                <p class="metric-label">High / Low</p>
-                <p class="metric-value" id="market-high-low">–</p>
+<section class="market-hero">
+    <article class="market-hero-card">
+        <div class="market-hero-top">
+            <div>
+                <p class="market-hero-symbol" id="market-hero-symbol">BTC / USDT</p>
+                <p class="market-hero-name" id="market-hero-name">Bitcoin</p>
             </div>
-
-            <!--average price metric-->
-            <div class="metric-box">
-                <p class="metric-label">Average price</p>
-                <p class="metric-value" id="market-average">–</p>
-            </div>
-
-            <!--volatility metric-->
-            <div class="metric-box">
-                <p class="metric-label">Volatility</p>
-                <p class="metric-value" id="market-volatility">–</p>
+            <div class="market-hero-price-block">
+                <p class="market-hero-price" id="market-close">n/a</p>
+                <p class="market-hero-change" id="market-return-24h">n/a</p>
             </div>
         </div>
+        <div class="market-hero-chart" id="market-chart" aria-label="Recent market chart"></div>
+        <p class="market-hero-read" id="market-summary">Loading market snapshot for the selected asset.</p>
+        <p class="note" id="market-refresh-note">Loading latest market snapshot.</p>
+    </article>
 
-        <!--note explaining future use of real market data-->
-        <p class="note">
-            Later this will use real Binance OHLCV data and feed into the model.
-        </p>
+    <article class="market-hero-side">
+        <p class="market-side-kicker">Market behaviour</p>
+        <div class="market-side-stats">
+            <div class="side-stat">
+                <span class="side-stat-label" title="How variable returns have been over the last 20 periods. Higher = more volatile.">Volatility</span>
+                <strong class="side-stat-value" id="market-volatility">n/a</strong>
+                <span class="side-stat-detail" id="market-volatility-meaning">How jumpy the recent market looks.</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label" title="Recent volume and trade count compared to its 20-period average.">Activity</span>
+                <strong class="side-stat-value" id="market-activity">n/a</strong>
+                <span class="side-stat-detail" id="market-activity-meaning">Whether recent activity is quiet, normal, or elevated.</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label" title="The basic indicator-only read from technical levels (not the ML strategy decision).">Indicator read</span>
+                <strong class="side-stat-value" id="market-rule-signal">n/a</strong>
+                <span class="side-stat-detail">Rule-based technical read. For the ML signal, see the Strategies page.</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label" title="Whether all evaluation outputs for this asset are fully populated.">Data status</span>
+                <strong class="side-stat-value" id="market-signal-mode">n/a</strong>
+                <span class="side-stat-detail">Indicates whether the pipeline has produced complete outputs for this asset.</span>
+            </div>
+        </div>
+    </article>
+</section>
+
+<section class="market-context-section">
+    <div class="section-heading">
+        <div>
+            <h2>Extra context available</h2>
+            <p class="note">Other data layers LiveStrat has for this asset. These do not replace the main market view; they confirm or challenge it.</p>
+        </div>
     </div>
-</div>
+
+    <div class="market-context-grid">
+        <article class="context-card" data-context="futures">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="context-futures-dot"></span>
+                <p class="context-label">Futures positioning</p>
+            </header>
+            <p class="context-status" id="market-futures-support">Loading</p>
+            <p class="context-detail" id="market-futures-note">Funding rate, open interest, and crowding state.</p>
+        </article>
+
+        <article class="context-card" data-context="sentiment">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="context-sentiment-dot"></span>
+                <p class="context-label">Sentiment source</p>
+            </header>
+            <p class="context-status" id="market-effective-sentiment">Loading</p>
+            <p class="context-detail" id="market-sentiment-note">Asset-specific news sentiment when available, otherwise broad market mood.</p>
+        </article>
+
+        <article class="context-card" data-context="news">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="context-news-dot"></span>
+                <p class="context-label">Asset news</p>
+            </header>
+            <p class="context-status" id="market-gdelt-status">Loading</p>
+            <p class="context-detail" id="market-news-note">GDELT article coverage for this asset over the recent window.</p>
+        </article>
+
+        <article class="context-card" data-context="onchain">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="context-onchain-dot"></span>
+                <p class="context-label">Network on-chain</p>
+            </header>
+            <p class="context-status" id="market-onchain-status">Loading</p>
+            <p class="context-detail" id="market-onchain-note">Wallet and network telemetry from Coin Metrics where coverage exists.</p>
+        </article>
+
+        <article class="context-card" data-context="defi">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="context-defi-dot"></span>
+                <p class="context-label">Ecosystem TVL</p>
+            </header>
+            <p class="context-status" id="market-defi-status">Loading</p>
+            <p class="context-detail" id="market-defi-note">DeFiLlama chain-level TVL context for the mapped ecosystem.</p>
+        </article>
+    </div>
+
+    <div class="market-context-details" id="market-context-details">
+        <div class="market-context-row">
+            <span class="metric-label">Basis mode</span>
+            <strong id="market-basis-mode">n/a</strong>
+        </div>
+        <div class="market-context-row">
+            <span class="metric-label">News theme</span>
+            <strong id="market-news-theme">n/a</strong>
+        </div>
+        <div class="market-context-row">
+            <span class="metric-label">On-chain support driver</span>
+            <strong id="market-onchain-driver">n/a</strong>
+        </div>
+        <div class="market-context-row">
+            <span class="metric-label">DeFi chain</span>
+            <strong id="market-defi-chain">n/a</strong>
+        </div>
+    </div>
+</section>
+
+<p hidden id="market-capability-note"></p>
+<p hidden id="market-context-note"></p>
+<p hidden id="market-source-policy-note"></p>
+<p hidden id="market-price-read"></p>
+<p hidden id="market-return-meaning"></p>
+<p hidden id="market-multimodal-selection"></p>
+<p hidden id="market-chart-note"></p>
+<p hidden id="market-chart-stats"></p>
+<p hidden id="market-policy-return"></p>
+<p hidden id="market-sharpe"></p>
+<p hidden id="market-drawdown"></p>
+<p hidden id="market-signal-explainer"></p>
+<p hidden id="market-lane-badge"></p>
 {% endblock %}
 
 {% block extra_js %}
-<!--loads javascript that controls the markets demo behaviour-->
+<script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
+<script src="{{ url_for('static', filename='css/js/signal_explainer.js') }}"></script>
 <script src="{{ url_for('static', filename='css/js/markets.js') }}"></script>
 {% endblock %}

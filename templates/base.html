@@ -1,79 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!--sets character encoding for the page-->
     <meta charset="UTF-8">
-
-    <!--page title, overridden by child templates when needed-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LiveStrat{% endblock %}</title>
-
-    <!--loads the main global stylesheet used across all pages-->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-
-    <!--allows pages to inject their own css files-->
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-<!--main layout wrapper for sidebar and content-->
-<div class="app-layout">
-    <!--sidebar navigation section-->
-    <aside class="sidebar">
-        <!--top area of the sidebar with app branding-->
-        <div class="sidebar-header">
-            <a href="{{ url_for('dashboard') }}" class="logo-link">
-                <span class="logo-text">LiveStrat</span>
+<body data-active-page="{{ active_page or '' }}">
+<div class="app-shell">
+    <aside class="sidebar" id="workspace-sidebar">
+        <div class="sidebar-top">
+            <button
+                type="button"
+                class="sidebar-toggle sidebar-toggle-desktop"
+                id="sidebar-toggle"
+                aria-label="Collapse sidebar"
+                aria-expanded="true"
+            >
+                <span class="sidebar-toggle-icon sidebar-toggle-open" aria-hidden="true">&lsaquo;</span>
+                <span class="sidebar-toggle-icon sidebar-toggle-closed" aria-hidden="true">&rsaquo;</span>
+            </button>
+
+            <a href="{{ url_for('dashboard') }}" class="brand-lockup">
+                <span class="brand-wordmark">
+                    <strong>LiveStrat</strong>
+                    <small>Cryptocurrency Strategy Platform</small>
+                </span>
             </a>
+
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
+                    <span class="sidebar-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M4 4h7v7H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 13h7v7H4z"></path></svg>
+                    </span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('markets') }}" class="sidebar-link {% if active_page == 'markets' %}active{% endif %}">
+                    <span class="sidebar-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M4 16l5-5 4 4 7-7"></path><path d="M15 8h5v5"></path></svg>
+                    </span>
+                    <span>Markets</span>
+                </a>
+                <a href="{{ url_for('strategies') }}" class="sidebar-link {% if active_page == 'strategies' %}active{% endif %}">
+                    <span class="sidebar-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"></path><path d="M7 5v4M12 10v4M17 15v4"></path></svg>
+                    </span>
+                    <span>Strategies</span>
+                </a>
+                <a href="{{ url_for('analytics') }}" class="sidebar-link {% if active_page == 'analytics' %}active{% endif %}">
+                    <span class="sidebar-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M5 19V10M12 19V5M19 19v-8"></path></svg>
+                    </span>
+                    <span>Analytics</span>
+                </a>
+                <a href="{{ url_for('account') }}" class="sidebar-link {% if active_page == 'account' %}active{% endif %}">
+                    <span class="sidebar-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M20 21a8 8 0 0 0-16 0"></path><path d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"></path></svg>
+                    </span>
+                    <span>Account</span>
+                </a>
+            </nav>
         </div>
 
-        <!--navigation links for different app sections-->
-        <nav class="sidebar-nav">
-            <!--dashboard navigation link-->
-            <a href="{{ url_for('dashboard') }}"
-               class="sidebar-item {% if active_page == 'dashboard' %}active{% endif %}">
-                Dashboard
-            </a>
-
-            <!--markets navigation link-->
-            <a href="{{ url_for('markets') }}"
-               class="sidebar-item {% if active_page == 'markets' %}active{% endif %}">
-                Markets
-            </a>
-
-            <!--strategies navigation link-->
-            <a href="{{ url_for('strategies') }}"
-               class="sidebar-item {% if active_page == 'strategies' %}active{% endif %}">
-                Strategies
-            </a>
-
-            <!--analytics navigation link-->
-            <a href="{{ url_for('analytics') }}"
-               class="sidebar-item {% if active_page == 'analytics' %}active{% endif %}">
-                Analytics
-            </a>
-
-            <!--notifications navigation link-->
-            <a href="{{ url_for('notifications') }}"
-               class="sidebar-item {% if active_page == 'notifications' %}active{% endif %}">
-                Notifications
-            </a>
-        </nav>
-
-        <!--bottom section of the sidebar-->
-        <div class="sidebar-footer">
-            <!--sign out link-->
-            <a href="{{ url_for('logout') }}" class="sidebar-item logout">
-                Sign Out
-            </a>
+        <div class="sidebar-bottom">
+            <div class="sidebar-user">
+                <p class="sidebar-user-name">{{ current_user.username if current_user and current_user.username else (account_email or demo_user or 'LiveStrat User') }}</p>
+            </div>
+            <button type="button" class="sidebar-signout" id="sidebar-signout-trigger">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M10 17l5-5-5-5"></path>
+                    <path d="M15 12H4"></path>
+                    <path d="M13 5h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"></path>
+                </svg>
+                <span>Sign out</span>
+            </button>
         </div>
     </aside>
 
-    <!--main content area where each page is rendered-->
-    <main class="main-content">
-        {% block content %}{% endblock %}
-    </main>
+    <div class="content-shell">
+        <header class="topbar">
+            <button
+                type="button"
+                class="sidebar-toggle sidebar-toggle-mobile"
+                id="topbar-sidebar-toggle"
+                aria-label="Toggle sidebar"
+                aria-expanded="true"
+            >
+                <span class="sidebar-toggle-icon sidebar-toggle-open" aria-hidden="true">&lsaquo;</span>
+                <span class="sidebar-toggle-icon sidebar-toggle-closed" aria-hidden="true">&rsaquo;</span>
+            </button>
+            <div class="topbar-copy">
+                <p class="topbar-label">LiveStrat</p>
+                <p class="topbar-title">
+                    {% if active_page == 'dashboard' %}Dashboard{% elif active_page == 'markets' %}Market View{% elif active_page == 'strategies' %}Strategy Library{% elif active_page == 'analytics' %}Evidence and Analytics{% elif active_page == 'notifications' %}Messages{% elif active_page == 'account' %}Account{% else %}LiveStrat{% endif %}
+                </p>
+            </div>
+            <div class="topbar-meta">
+                <span class="topbar-date">{{ today_label }}</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 </div>
 
-<!--allows pages to inject page-specific javascript-->
+<div class="modal-backdrop" id="signout-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="signout-modal-title">
+        <p class="modal-kicker">Confirm sign out</p>
+        <h2 id="signout-modal-title">Are you sure you want to sign out?</h2>
+        <p class="note">You will return to the login page and end the current LiveStrat session.</p>
+        <div class="modal-actions">
+            <button type="button" class="button-secondary" id="signout-cancel">Cancel</button>
+            <a href="{{ url_for('logout_confirmed') }}" class="button-link button-danger">Sign out</a>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='css/js/base.js') }}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

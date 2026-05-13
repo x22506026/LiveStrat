@@ -1,44 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!--sets character encoding for the page-->
     <meta charset="UTF-8">
-
-    <!--page title shown in the browser tab-->
-    <title>Create Account</title>
-
-    <!--loads the same styles used for login to keep consistency-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up | LiveStrat</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
-
 <body>
-    <!--container holding the signup form-->
-    <div class="login-container">
-        <!--page heading-->
-        <h2>Create Your Account</h2>
+    <main class="auth-page">
+        <section class="auth-intro">
+            <p class="auth-platform-label">LiveStrat</p>
+            <h1>Create your LiveStrat account.</h1>
+            <p class="auth-intro-sub">
+                Set up an account to save strategy profiles, generate alert messages, and access evidence-backed strategy views across the seven tracked crypto assets.
+            </p>
+            <ul class="auth-intro-points">
+                <li><span>01</span> Save and compare strategy configurations</li>
+                <li><span>02</span> Get strategy and market alerts in-app or via Telegram</li>
+                <li><span>03</span> Full evaluation evidence on every saved view</li>
+            </ul>
+        </section>
 
-        <!--signup form that submits new user details to the backend-->
-        <form action="{{ url_for('signup_user') }}" method="POST">
-            <!--username input field-->
-            <input type="text" placeholder="Choose Username" required>
+        <section class="auth-access-section">
+            <div class="auth-form-card">
+                <h2>Sign up</h2>
+                <p class="auth-note">Create account details for saved strategies, messages, and future profile storage.</p>
 
-            <!--password input field-->
-            <input type="password" placeholder="Choose Password" required>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="auth-messages" role="alert">
+                            {% for category, message in messages %}
+                                <p class="auth-message {{ category }}">{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
 
-            <!--submit button for creating an account-->
-            <button type="submit">Sign Up</button>
-        </form>
+                <form action="{{ url_for('signup_user') }}" method="POST" class="auth-form">
+                    <div>
+                        <label for="full_name">Full name</label>
+                        <input id="full_name" type="text" name="full_name" placeholder="Your name" required>
+                    </div>
+                    <div>
+                        <label for="email">Email</label>
+                        <input id="email" type="email" name="email" placeholder="your@email.com" required>
+                    </div>
+                    <div>
+                        <label for="username">Username</label>
+                        <input id="username" type="text" name="username" placeholder="Choose a username" required>
+                    </div>
+                    <div>
+                        <label for="password">Password</label>
+                        <input id="password" type="password" name="password" placeholder="Create a password" required>
+                    </div>
+                    <button type="submit">Create account</button>
+                </form>
 
-        <!--link back to the login page for existing users-->
-        <p>Already registered?
-            <a href="{{ url_for('login') }}">Log in</a>
-        </p>
-    </div>
+                <div class="auth-footer">
+                    <span>Already have an account?</span>
+                    <a href="{{ url_for('login') }}">Log in</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="offers-section">
+            <div class="offers-heading">
+                <h2>What you can explore</h2>
+                <p>LiveStrat combines saved strategy evidence with market, sentiment, and on-chain context so each view is easier to understand.</p>
+            </div>
+            <div class="offers-grid" aria-label="LiveStrat services">
+                <article><strong>Dashboard</strong><span>Start with tracked assets, recent price movement, and data freshness.</span></article>
+                <article><strong>Markets</strong><span>Inspect price action, futures support, sentiment, on-chain, and ecosystem TVL context.</span></article>
+                <article><strong>Strategies</strong><span>Open strategy pages, compare preset routes, and save structured configurations.</span></article>
+                <article><strong>Analytics</strong><span>Check evaluation strength, returns, rolling validation, and source coverage.</span></article>
+                <article><strong>Messages</strong><span>Create account messages from the same backend summaries used across the app.</span></article>
+            </div>
+        </section>
+    </main>
 </body>
 </html>
-
-
-
-
-
-

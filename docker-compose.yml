@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: livestrat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: livestrat
+      POSTGRES_USER: livestrat
+      POSTGRES_PASSWORD: livestrat_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - livestrat_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  livestrat_postgres_data:

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Start Here | LiveStrat{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/start_here.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="start-hero">
+    <div class="start-hero-copy">
+        <p class="start-kicker">Start Here</p>
+        <h1>Use LiveStrat as a trading research assistant.</h1>
+        <p class="start-hero-note">
+            LiveStrat brings market data, futures data, sentiment, on-chain context, strategy signals,
+            and model evaluation into one place. It helps a user compare the market view with the evidence behind it.
+        </p>
+    </div>
+    <div class="start-hero-orbit" aria-hidden="true">
+        <span class="orbit orbit-large"></span>
+        <span class="orbit orbit-mid"></span>
+        <span class="orbit orbit-small"></span>
+        <span class="orbit-core">LS</span>
+    </div>
+</section>
+
+<section class="start-lanes">
+    <article class="lane-strip lane-display">
+        <div class="lane-mark">01</div>
+        <div>
+            <h2>Read the market first</h2>
+            <p>Check price, volume, volatility, and futures data before looking at any strategy signal.</p>
+        </div>
+    </article>
+    <article class="lane-strip lane-decision">
+        <div class="lane-mark">02</div>
+        <div>
+            <h2>Check the active strategy signal</h2>
+            <p>Each strategy turns the latest generated features into a simple Buy, Hold, or Avoid signal.</p>
+        </div>
+    </article>
+    <article class="lane-strip lane-evidence">
+        <div class="lane-mark">03</div>
+        <div>
+            <h2>Validate with evidence</h2>
+            <p>Use Analytics to check accuracy, macro-F1, rolling validation, returns, and source coverage.</p>
+        </div>
+    </article>
+</section>
+
+<section class="signal-guide">
+    <div class="section-heading">
+        <div>
+            <h2>How to read LiveStrat labels</h2>
+            <p class="note">The app keeps the final wording simple, then shows the evidence underneath.</p>
+        </div>
+    </div>
+    <div class="guide-grid">
+        <article>
+            <strong>Positive</strong>
+            <p>Evidence is supportive. The market or strategy view is leaning in a useful direction.</p>
+        </article>
+        <article>
+            <strong>Mixed</strong>
+            <p>Evidence is not clear. The safest interpretation is to wait or compare more data.</p>
+        </article>
+        <article>
+            <strong>Negative</strong>
+            <p>Evidence is weak or risky. The app should avoid making a strong bullish claim.</p>
+        </article>
+    </div>
+</section>
+
+<section class="start-capabilities">
+    <div class="capability-flow">
+        <article class="capability-node">
+            <span class="node-shape node-market"></span>
+            <h3>Market and futures data</h3>
+            <p>Review spot price, recent returns, volatility, funding, open interest, long/short data, taker flow, and basis where available.</p>
+        </article>
+        <article class="capability-node">
+            <span class="node-shape node-strategy"></span>
+            <h3>Strategies</h3>
+            <p>Choose a preset strategy, compare assets and timeframes, and save strategy profiles to your account.</p>
+        </article>
+        <article class="capability-node">
+            <span class="node-shape node-evidence"></span>
+            <h3>Evidence</h3>
+            <p>Check what the models achieved on saved evaluation windows, and see where data is complete or limited.</p>
+        </article>
+        <article class="capability-node">
+            <span class="node-shape node-alerts"></span>
+            <h3>Messages</h3>
+            <p>Generate and save strategy messages so a user can review past market and signal updates.</p>
+        </article>
+    </div>
+</section>
+
+<section class="start-assets">
+    <div class="section-heading">
+        <div>
+            <h2>Current tracked assets</h2>
+            <p class="note">These are the assets currently shown across the app.</p>
+        </div>
+    </div>
+    <div class="asset-ribbon">
+        {% for symbol in market_symbols %}
+        {% set summary = market_summaries.get(symbol, {}) %}
+        {% set latest_close = summary.get('latest_close', 0)|float %}
+        {% set latest_return_24h = summary.get('latest_return_24h_pct', 0)|float %}
+        <div class="asset-pill">
+            <strong>{{ symbol.replace('USDT', ' / USD') }}</strong>
+            <span>{{ "%.2f"|format(latest_close) }}</span>
+            <em>{{ "%.2f"|format(latest_return_24h) }}% 24h</em>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="start-next-step">
+    <div>
+        <p class="start-kicker">Next Step</p>
+        <h2>Open the dashboard to see the latest generated market view, strategy signal, and data freshness.</h2>
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="start-arrow-link" aria-label="Open dashboard">
+        <span>Open dashboard</span>
+        <span class="arrow-glyph" aria-hidden="true">-&gt;</span>
+    </a>
+</section>
+{% endblock %}

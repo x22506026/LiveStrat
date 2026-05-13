@@ -1,62 +1,255 @@
 {% extends "base.html" %}
-<!--uses the base layout so the notifications page shares the same sidebar and structure-->
 
-{% block title %}Notifications | LiveStrat{% endblock %}
-<!--sets the page title for the notifications page-->
+{% block title %}Messages | LiveStrat{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+{% endblock %}
 
 {% block content %}
-<!--main content area for the notifications page-->
-<div class="page-header">
-    <!--page heading and short description-->
-    <h1>Notifications</h1>
-    <p>Choose what you want to be alerted about.</p>
+<section class="notifications-toolbar">
+    <div class="toolbar-copy">
+        <p class="toolbar-kicker">Messages and alerts</p>
+        <h2>Generate strategy messages and save them to your account.</h2>
+        <p class="note">Build a message from the latest LiveStrat data, save it to history, or prepare Telegram delivery if you have configured a bot.</p>
+    </div>
+    <div class="notification-toolbar-meta">
+        <span class="notif-meta-pill" id="notif-account-meta">Account-linked</span>
+        <span class="notif-meta-pill" id="notif-telegram-meta">Telegram: checking...</span>
+    </div>
+</section>
+
+<div class="notification-layout">
+    <aside class="card notification-settings">
+        <h3>Message settings</h3>
+
+        <div>
+            <label for="notif-asset">Asset</label>
+            <select id="notif-asset">
+                {% for symbol in market_symbols %}
+                <option value="{{ symbol }}" {% if symbol == selected_symbol %}selected{% endif %}>
+                    {{ symbol.replace('USDT', ' / USDT') }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="notif-strategy-select">Strategy</label>
+            <select id="notif-strategy-select">
+                <option value="recommended">Balanced Default</option>
+                <option value="conservative_trend">Trend Confirmation</option>
+                <option value="momentum_breakout">Momentum Breakout</option>
+                <option value="futures_crowd_reversal">Crowd Reversal</option>
+                <option value="multimodal_balanced">Context-Aware Balanced</option>
+                <option value="daily_structural_confirmation">Structural Confirmation</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="notif-timeframe">Timeframe</label>
+            <select id="notif-timeframe">
+                <option value="1h">1 hour</option>
+                <option value="4h" selected>4 hours</option>
+            </select>
+        </div>
+
+        <label class="notification-toggle">
+            <input type="checkbox" id="notif-price" {% if alert_preferences.price %}checked{% endif %}>
+            <span>Price updates</span>
+        </label>
+
+        <label class="notification-toggle">
+            <input type="checkbox" id="notif-strategy" {% if alert_preferences.strategy %}checked{% endif %}>
+            <span>Strategy signal updates</span>
+        </label>
+
+        <label class="notification-toggle">
+            <input type="checkbox" id="notif-sentiment" {% if alert_preferences.sentiment %}checked{% endif %}>
+            <span>Sentiment updates</span>
+        </label>
+
+        <label class="notification-toggle">
+            <input type="checkbox" id="notif-onchain" {% if alert_preferences.onchain %}checked{% endif %}>
+            <span>Network on-chain context</span>
+        </label>
+
+        <label class="notification-toggle">
+            <input type="checkbox" id="notif-defi" checked>
+            <span>Ecosystem TVL context</span>
+        </label>
+
+        <label class="notification-toggle">
+            <input type="checkbox" id="notif-volatility" {% if alert_preferences.volatility %}checked{% endif %}>
+            <span>Volatility updates</span>
+        </label>
+
+        <label class="notification-toggle">
+            <input type="checkbox" id="notif-telegram-enabled" {% if alert_preferences.telegram_enabled %}checked{% endif %}>
+            <span>Prepare Telegram delivery</span>
+        </label>
+
+        <div>
+            <label for="notif-telegram-chat-id">Telegram chat ID</label>
+            <input
+                id="notif-telegram-chat-id"
+                type="text"
+                value="{{ alert_preferences.telegram_chat_id }}"
+                placeholder="e.g. 123456789"
+            >
+        </div>
+
+        <button id="notif-test">Generate current message</button>
+        <button id="notif-save-preferences" type="button" class="button-secondary">Save preferences</button>
+        <button id="notif-save-events" type="button" class="button-secondary">Save generated messages</button>
+        <p class="note" id="notif-save-status">Preferences are linked to your LiveStrat account.</p>
+        <p class="note" id="notif-telegram-status">Telegram delivery status will appear here.</p>
+    </aside>
+
+    <section class="card">
+        <div class="section-heading">
+            <div>
+                <h2>Current Message</h2>
+                <p class="note">Built from the selected asset, strategy, timeframe, and enabled message types.</p>
+            </div>
+            <span class="badge">Ready to save</span>
+        </div>
+
+        <div class="metrics-grid notification-capability-grid">
+            <div class="metric-box notification-metric-box" id="notif-signal-mode-box">
+                <p class="metric-label">Signal mode</p>
+                <p class="metric-value" id="notif-signal-mode">Ready</p>
+            </div>
+            <div class="metric-box notification-metric-box" id="notif-effective-sentiment-box">
+                <p class="metric-label">Effective sentiment</p>
+                <p class="metric-value" id="notif-effective-sentiment">n/a</p>
+            </div>
+            <div class="metric-box notification-metric-box" id="notif-gdelt-status-box">
+                <p class="metric-label">Asset news</p>
+                <p class="metric-value" id="notif-gdelt-status">n/a</p>
+            </div>
+            <div class="metric-box notification-metric-box" id="notif-onchain-status-box">
+                <p class="metric-label">Network on-chain</p>
+                <p class="metric-value" id="notif-onchain-status">n/a</p>
+            </div>
+            <div class="metric-box notification-metric-box" id="notif-defi-status-box">
+                <p class="metric-label">Ecosystem TVL</p>
+                <p class="metric-value" id="notif-defi-status">n/a</p>
+            </div>
+        </div>
+
+        <div class="notification-preview-shell">
+            <div class="soft-panel notification-message tone-neutral" id="notif-preview-panel">
+                <div class="notification-message-header">
+                    <div>
+                        <p class="metric-label">Message</p>
+                        <h3 id="notif-preview-heading">Current message summary</h3>
+                    </div>
+                    <div class="alert-meta" id="notif-preview-meta"></div>
+                </div>
+                <div id="notif-preview" class="notification-preview-items">
+                    <div class="notification-preview-item">
+                        <span class="preview-item-label">Market</span>
+                        <p>{{ selected_symbol }} is currently {{ selected_summary.get('trend_status', 'unknown') }}.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="notification-detail-grid">
+                <div class="notification-detail-card">
+                    <p class="metric-label">Latest close</p>
+                    <p class="notification-detail-value" id="notif-latest-close">{{ "%.2f"|format(selected_summary.get('latest_close', 0)|float) }}</p>
+                </div>
+                <div class="notification-detail-card" id="notif-return-card">
+                    <p class="metric-label">24h return</p>
+                    <p class="notification-detail-value" id="notif-latest-return">{{ "%.2f"|format(selected_summary.get('latest_return_24h_pct', 0)|float) }}%</p>
+                </div>
+                <div class="notification-detail-card" id="notif-confidence-card">
+                    <p class="metric-label">Model confidence</p>
+                    <p class="notification-detail-value" id="notif-model-confidence">{{ "%.1f"|format((selected_summary.get('selected_primary_confidence', selected_summary.get('scaled_model_confidence', 0))|float) * 100) }}%</p>
+                </div>
+                <div class="notification-detail-card">
+                    <p class="metric-label">Policy action</p>
+                    <p class="notification-detail-value" id="notif-latest-action">{{ selected_summary.get('latest_action', 'not available')|replace('_', ' ') }}</p>
+                </div>
+                <div class="notification-detail-card">
+                    <p class="metric-label">Backtest Sharpe</p>
+                    <p class="notification-detail-value" id="notif-backtest-sharpe">{{ "%.2f"|format(selected_summary.get('sharpe_ratio', 0)|float) }}</p>
+                </div>
+            </div>
+
+            <div class="notification-note-grid">
+                <div class="notification-note-card">
+                    <p class="metric-label">Capability note</p>
+                    <p class="note" id="notif-capability-note">Messages use the selected asset and only include data that is available.</p>
+                </div>
+                <div class="notification-note-card">
+                    <p class="metric-label">Signal read</p>
+                    <p class="note" id="notif-signal-explainer">
+                        LiveStrat explains the current signal using trend, confidence, and available context.
+                    </p>
+                </div>
+                <div class="notification-note-card">
+                    <p class="metric-label">Context family</p>
+                    <p class="note" id="notif-multimodal-selection">
+                        {{ selected_summary.get('multimodal_selected_context_variant', 'No validation-selected multimodal context family is active for this asset yet.') }}
+                    </p>
+                </div>
+                <div class="notification-note-card">
+                    <p class="metric-label">Source policy</p>
+                    <p class="note" id="notif-source-policy-note">
+                        Market/futures drive core messages; network on-chain and ecosystem TVL are supporting context.
+                    </p>
+                </div>
+                <div class="notification-note-card">
+                    <p class="metric-label">Sentiment note</p>
+                    <p class="note" id="notif-sentiment-summary">
+                        {{ sentiment_summary.get('sentiment_summary', 'Sentiment summary not generated yet.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
-<!--card containing notification preferences and preview-->
-<div class="card" style="max-width: 640px;">
-    <!--option to enable or disable price alerts-->
-    <div>
-        <label>
-            <input type="checkbox" id="notif-price" checked>
-            Price alerts
-        </label>
+<section class="card generated-alerts-card">
+    <div class="section-heading">
+        <div>
+            <h2>Current Generated Messages</h2>
+            <p class="note">Messages created from your current settings before saving.</p>
+        </div>
+        <span class="badge" id="notif-alert-count">0 messages</span>
     </div>
 
-    <!--option to enable or disable strategy signals-->
-    <div>
-        <label>
-            <input type="checkbox" id="notif-strategy" checked>
-            Strategy signals
-        </label>
+    <div class="generated-alerts-list" id="notif-alert-list">
+        <article class="generated-alert empty">
+            <h3>No messages generated yet</h3>
+            <p>Choose message settings and press Generate current message.</p>
+        </article>
+    </div>
+</section>
+
+<section class="card generated-alerts-card">
+    <div class="section-heading">
+        <div>
+            <h2>Saved Message History</h2>
+            <p class="note">Saved in-app messages linked to your LiveStrat account.</p>
+        </div>
+        <span class="badge" id="notif-event-count">0 events</span>
     </div>
 
-    <!--option to enable or disable sentiment-based alerts-->
-    <div>
-        <label>
-            <input type="checkbox" id="notif-sentiment">
-            Sentiment changes
-        </label>
+    <div class="saved-events-list" id="notif-event-list">
+        <article class="generated-alert empty">
+            <h3>No saved events yet</h3>
+            <p>Use Save generated messages to create account-linked message history.</p>
+        </article>
     </div>
-
-    <!--button to generate a demo notification preview-->
-    <button id="notif-test">Test notification</button>
-
-    <!--area showing a preview of the notification message-->
-    <div style="margin-top:12px;">
-        <p class="metric-label">Preview</p>
-        <p id="notif-preview">
-            Click the button to see how a message could look.
-        </p>
-    </div>
-
-    <!--note explaining future Telegram integration-->
-    <p class="note">
-        Later the same message will also be sent through the Telegram bot.
-    </p>
-</div>
+</section>
 {% endblock %}
 
 {% block extra_js %}
-<!--loads javascript that controls the notification demo behaviour-->
+<script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
+<script id="sentiment-summary-data" type="application/json">{{ sentiment_summary|tojson }}</script>
+<script src="{{ url_for('static', filename='css/js/signal_explainer.js') }}"></script>
 <script src="{{ url_for('static', filename='css/js/notifications.js') }}"></script>
 {% endblock %}

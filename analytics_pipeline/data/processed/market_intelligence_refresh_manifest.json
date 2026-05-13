@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-05-12T11:38:39.543906+00:00",
+  "timeframes": {
+    "4h": {
+      "timeframe": "4h",
+      "start_date": "2026-02-04",
+      "end_date": "2026-05-04",
+      "status": "failed",
+      "row_count": 0,
+      "include_strategy_suite": true,
+      "include_gdelt_context": true,
+      "refreshed_at": "2026-05-12T11:38:39.543906+00:00",
+      "error": "Length of values (48) does not match length of index (51)",
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "BNBUSDT",
+        "XRPUSDT",
+        "ADAUSDT",
+        "DOGEUSDT"
+      ],
+      "include_core_suite": true,
+      "include_context_suite": false,
+      "resume_existing": true,
+      "core_refreshed_at": "2026-05-06T10:38:33.703735+00:00",
+      "strategy_refreshed_at": "2026-05-06T10:38:33.703735+00:00",
+      "context_refreshed_at": "2026-05-08T15:21:09.233523+00:00",
+      "gdelt_context_refreshed_at": "2026-05-06T10:38:50.580475+00:00"
+    },
+    "1h": {
+      "timeframe": "1h",
+      "start_date": "2026-04-20",
+      "end_date": "2026-05-04",
+      "status": "completed",
+      "row_count": 7,
+      "include_strategy_suite": true,
+      "include_gdelt_context": true,
+      "refreshed_at": "2026-05-08T15:21:19.351248+00:00",
+      "error": null,
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "BNBUSDT",
+        "XRPUSDT",
+        "ADAUSDT",
+        "DOGEUSDT"
+      ],
+      "include_core_suite": true,
+      "include_context_suite": true,
+      "resume_existing": false,
+      "core_refreshed_at": "2026-05-06T09:48:33.475079+00:00",
+      "strategy_refreshed_at": "2026-05-06T09:48:33.475079+00:00",
+      "context_refreshed_at": "2026-05-08T15:21:19.351248+00:00",
+      "gdelt_context_refreshed_at": "2026-05-06T09:48:33.475079+00:00",
+      "defillama_context_assets": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "BNB",
+        "XRP",
+        "ADA",
+        "DOGE"
+      ],
+      "defillama_context_refreshed_at": "2026-05-08T16:06:59.222543+00:00",
+      "context_refresh_note": "seven-asset app-facing overview includes DeFiLlama ecosystem TVL context; raw context currentness remains source-specific"
+    },
+    "1d": {
+      "timeframe": "1d",
+      "start_date": "2026-01-04",
+      "end_date": "2026-05-04",
+      "status": "completed",
+      "row_count": 7,
+      "include_strategy_suite": true,
+      "include_gdelt_context": true,
+      "refreshed_at": "2026-05-08T15:02:03.098815+00:00",
+      "error": null,
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "BNBUSDT",
+        "XRPUSDT",
+        "ADAUSDT",
+        "DOGEUSDT"
+      ],
+      "include_core_suite": true,
+      "include_context_suite": true,
+      "context_refresh_note": "seven-asset app-facing overview includes DeFiLlama ecosystem TVL context; raw context currentness remains source-specific",
+      "core_refreshed_at": "2026-05-06T10:26:23.149985+00:00",
+      "strategy_refreshed_at": "2026-05-06T10:26:23.149985+00:00",
+      "context_refreshed_at": "2026-05-07T12:12:33.421492+00:00",
+      "gdelt_context_refreshed_at": "2026-05-08T15:02:03.098815+00:00",
+      "overview_rebuilt_at": "2026-05-08T15:08:34.168151+00:00",
+      "onchain_supported_assets": [
+        "BTC",
+        "ETH",
+        "XRP",
+        "ADA",
+        "DOGE"
+      ],
+      "onchain_source_limited_assets": [
+        "SOL",
+        "BNB"
+      ],
+      "asset_news_configured_assets": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "BNB",
+        "XRP",
+        "ADA",
+        "DOGE"
+      ],
+      "defillama_context_assets": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "BNB",
+        "XRP",
+        "ADA",
+        "DOGE"
+      ],
+      "defillama_context_refreshed_at": "2026-05-08T16:06:59.222543+00:00"
+    }
+  }
+}

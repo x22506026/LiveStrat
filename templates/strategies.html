@@ -1,87 +1,288 @@
 {% extends "base.html" %}
-<!--uses the base layout so the strategies page shares the same sidebar and structure-->
 
 {% block title %}Strategies | LiveStrat{% endblock %}
-<!--sets the page title for the strategies page-->
 
 {% block extra_css %}
-<!--loads page-specific styles for the strategies layout-->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/strategies.css') }}">
 {% endblock %}
 
 {% block content %}
-<!--main content area for the strategies page-->
-<div class="page-header">
-    <!--page heading and short description-->
-    <h1>Strategies</h1>
-    <p>Try a simple strategy idea and see example results.</p>
-</div>
-
-<div class="strategies-layout">
-    <!--controls card for selecting a strategy and asset-->
-    <div class="card strategies-controls">
-        <div>
-            <!--strategy selection dropdown-->
+<section class="strategies-toolbar">
+    <div class="toolbar-copy">
+        <p class="toolbar-kicker">Strategy view</p>
+        <h2>One signal, with the evidence behind it.</h2>
+    </div>
+    <div class="toolbar-controls">
+        <div class="toolbar-field">
             <label for="strategy-select">Strategy</label>
             <select id="strategy-select">
-                <option value="rsi">RSI rebound</option>
-                <option value="ma">Moving average cross</option>
-                <option value="trend">Trend + sentiment</option>
+                <option value="recommended">Balanced Default</option>
+                <option value="conservative_trend">Trend Confirmation</option>
+                <option value="momentum_breakout">Momentum Breakout</option>
+                <option value="futures_crowd_reversal">Crowd Reversal</option>
+                <option value="rule_based">Transparent Rule Benchmark</option>
             </select>
         </div>
-
-        <div>
-            <!--asset selection dropdown-->
+        <div class="toolbar-field">
             <label for="strategy-asset">Asset</label>
             <select id="strategy-asset">
-                <option value="BTCUSDT">BTC / USDT</option>
-                <option value="ETHUSDT">ETH / USDT</option>
+                {% for symbol in market_symbols %}
+                <option value="{{ symbol }}" {% if symbol == selected_symbol %}selected{% endif %}>
+                    {{ symbol.replace('USDT', ' / USDT') }}
+                </option>
+                {% endfor %}
             </select>
         </div>
-
-        <!--button that triggers the demo strategy logic-->
-        <button id="strategy-run">Run demo strategy</button>
+        <div class="toolbar-field">
+            <label for="strategy-timeframe">View</label>
+            <select id="strategy-timeframe">
+                <option value="1h">1 hour</option>
+                <option value="4h" selected>4 hours</option>
+            </select>
+        </div>
     </div>
+</section>
 
-    <!--results card showing example strategy outputs-->
-    <div class="card">
-        <h2>Example results</h2>
-
-        <!--summary text updated dynamically by javascript-->
-        <p id="strategy-summary" class="note">
-            Pick a strategy and asset to see some sample numbers.
-        </p>
-
-        <!--grid layout for displaying strategy metrics-->
-        <div class="metrics-grid">
-            <!--win rate metric-->
-            <div class="metric-box">
-                <p class="metric-label">Win rate</p>
-                <p class="metric-value" id="strategy-winrate">–</p>
+<section class="signal-hero" id="signal-hero">
+    <div class="signal-hero-asset">
+        <div class="signal-hero-asset-top">
+            <div>
+                <p class="signal-hero-symbol" id="hero-symbol">BTC / USDT</p>
+                <p class="signal-hero-asset-name" id="hero-asset-name">Bitcoin</p>
             </div>
-
-            <!--confidence metric-->
-            <div class="metric-box">
-                <p class="metric-label">Confidence</p>
-                <p class="metric-value" id="strategy-confidence">–</p>
-            </div>
-
-            <!--maximum drawdown metric-->
-            <div class="metric-box">
-                <p class="metric-label">Max drawdown</p>
-                <p class="metric-value" id="strategy-drawdown">–</p>
+            <div class="signal-hero-price-block">
+                <p class="signal-hero-price" id="hero-price">$0.00</p>
+                <p class="signal-hero-change" id="hero-change">n/a 24h</p>
             </div>
         </div>
-
-        <!--note explaining future use of real backtesting data-->
-        <p class="note">
-            Later these will come from real backtests that mix price data and sentiment.
+        <div class="signal-hero-spark" id="hero-spark" aria-label="Recent price chart"></div>
+        <p class="signal-hero-freshness" id="hero-freshness">
+            <span class="freshness-dot freshness-dot-amber" id="hero-freshness-dot"></span>
+            Loading signal freshness...
         </p>
     </div>
-</div>
+
+    <div class="signal-hero-verdict" id="hero-verdict-card">
+        <p class="verdict-kicker">Current signal</p>
+        <div class="verdict-badge verdict-badge-hold" id="hero-verdict-badge">
+            <span id="hero-verdict-text">HOLD</span>
+        </div>
+        <div class="verdict-confidence">
+            <div class="verdict-confidence-top">
+                <span>Confidence</span>
+                <strong id="hero-confidence-value">n/a</strong>
+            </div>
+            <div class="verdict-confidence-track">
+                <span class="verdict-confidence-fill" id="hero-confidence-fill" style="width: 0%"></span>
+            </div>
+        </div>
+        <p class="verdict-strategy-note" id="hero-strategy-note">
+            Showing signal from the selected strategy and timeframe.
+        </p>
+    </div>
+</section>
+
+<section class="evidence-section">
+    <div class="section-heading">
+        <div>
+            <h2>Why this signal?</h2>
+            <p class="note">The signal is built from five evidence layers. Each is shown as a simple read.</p>
+        </div>
+    </div>
+
+    <div class="evidence-grid" id="evidence-grid">
+        <article class="evidence-card" data-evidence="trend">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="evidence-trend-dot"></span>
+                <p class="evidence-label">Price trend</p>
+            </header>
+            <p class="evidence-status" id="evidence-trend-status">Loading</p>
+            <p class="evidence-detail" id="evidence-trend-detail">Recent price direction and trend strength will appear here.</p>
+        </article>
+
+        <article class="evidence-card" data-evidence="activity">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="evidence-activity-dot"></span>
+                <p class="evidence-label">Activity</p>
+            </header>
+            <p class="evidence-status" id="evidence-activity-status">Loading</p>
+            <p class="evidence-detail" id="evidence-activity-detail">Volume and participation reading will appear here.</p>
+        </article>
+
+        <article class="evidence-card" data-evidence="futures">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="evidence-futures-dot"></span>
+                <p class="evidence-label">Futures positioning</p>
+            </header>
+            <p class="evidence-status" id="evidence-futures-status">Loading</p>
+            <p class="evidence-detail" id="evidence-futures-detail">Funding rate and crowd positioning will appear here.</p>
+        </article>
+
+        <article class="evidence-card" data-evidence="news">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="evidence-news-dot"></span>
+                <p class="evidence-label">News mood</p>
+            </header>
+            <p class="evidence-status" id="evidence-news-status">Loading</p>
+            <p class="evidence-detail" id="evidence-news-detail">Recent asset-specific news sentiment will appear here.</p>
+        </article>
+
+        <article class="evidence-card" data-evidence="onchain">
+            <header>
+                <span class="evidence-dot evidence-dot-neutral" id="evidence-onchain-dot"></span>
+                <p class="evidence-label">On-chain</p>
+            </header>
+            <p class="evidence-status" id="evidence-onchain-status">Loading</p>
+            <p class="evidence-detail" id="evidence-onchain-detail">Network telemetry reading will appear here when available.</p>
+        </article>
+    </div>
+</section>
+
+<section class="track-record-section">
+    <div class="section-heading">
+        <div>
+            <h2>Track record</h2>
+            <p class="note">How this strategy has performed on held-out data using walk-forward validation. The model is never shown future bars during training.</p>
+        </div>
+    </div>
+
+    <div class="track-record-grid">
+        <article class="track-stat-card">
+            <p class="track-stat-label">Accuracy on unseen data</p>
+            <p class="track-stat-value" id="track-accuracy">n/a</p>
+            <p class="track-stat-note">Share of correct directional calls on held-out test candles.</p>
+            <div class="track-stat-bar"><span id="track-accuracy-fill"></span></div>
+        </article>
+
+        <article class="track-stat-card">
+            <p class="track-stat-label">Strategy return</p>
+            <p class="track-stat-value" id="track-strategy-return">n/a</p>
+            <p class="track-stat-note">Total return from following the strategy signal (with trading costs).</p>
+        </article>
+
+        <article class="track-stat-card">
+            <p class="track-stat-label">Buy &amp; hold return</p>
+            <p class="track-stat-value" id="track-buy-hold">n/a</p>
+            <p class="track-stat-note">Total return from simply holding the coin over the same window.</p>
+        </article>
+
+        <article class="track-stat-card">
+            <p class="track-stat-label">Strategy minus hold</p>
+            <p class="track-stat-value" id="track-excess">n/a</p>
+            <p class="track-stat-note" id="track-excess-note">Difference is the strategy's edge versus a passive hold.</p>
+        </article>
+    </div>
+
+    <div class="track-honesty" id="track-honesty">
+        <p>The honest read will appear once the strategy data loads.</p>
+    </div>
+</section>
+
+<section class="other-strategies-section">
+    <div class="section-heading">
+        <div>
+            <h2>Try a different strategy</h2>
+            <p class="note">Each strategy answers the same question with different logic. Try switching to compare.</p>
+        </div>
+    </div>
+
+    <div class="strategy-grid">
+        <article class="strategy-card" data-strategy-id="recommended">
+            <p class="strategy-card-tag">Market + futures</p>
+            <h3>Balanced Default</h3>
+            <p class="strategy-card-desc">
+                The current LiveStrat backbone. Combines spot market features with futures positioning and applies a confidence-gated long/flat policy.
+            </p>
+            <p class="strategy-card-fit">Best for general-purpose use across the seven tracked coins.</p>
+            <button type="button" class="strategy-card-action" data-strategy-action="recommended">Use this strategy</button>
+        </article>
+
+        <article class="strategy-card" data-strategy-id="conservative_trend">
+            <p class="strategy-card-tag">Trend following</p>
+            <h3>Trend Confirmation</h3>
+            <p class="strategy-card-desc">
+                Requires stronger trend confirmation and uses volume / volatility filters before signalling. Slower and more conservative than the default.
+            </p>
+            <p class="strategy-card-fit">Best when you prefer fewer but higher-conviction entries.</p>
+            <button type="button" class="strategy-card-action" data-strategy-action="conservative_trend">Use this strategy</button>
+        </article>
+
+        <article class="strategy-card" data-strategy-id="momentum_breakout">
+            <p class="strategy-card-tag">Short horizon</p>
+            <h3>Momentum Breakout</h3>
+            <p class="strategy-card-desc">
+                Tuned for short-horizon breakouts. Watches participation strength, taker flow, and trade activity to identify continuation moves.
+            </p>
+            <p class="strategy-card-fit">Best for active 1h / 4h trading windows.</p>
+            <button type="button" class="strategy-card-action" data-strategy-action="momentum_breakout">Use this strategy</button>
+        </article>
+
+        <article class="strategy-card" data-strategy-id="futures_crowd_reversal">
+            <p class="strategy-card-tag">Contrarian</p>
+            <h3>Crowd Reversal</h3>
+            <p class="strategy-card-desc">
+                Fades crowded futures positioning. When funding and long/short ratios show one-sided crowding, this strategy looks for reversal entries.
+            </p>
+            <p class="strategy-card-fit">Best in choppy markets or after extended one-way moves.</p>
+            <button type="button" class="strategy-card-action" data-strategy-action="futures_crowd_reversal">Use this strategy</button>
+        </article>
+
+        <article class="strategy-card" data-strategy-id="rule_based">
+            <p class="strategy-card-tag">Transparent rules</p>
+            <h3>Rule Benchmark</h3>
+            <p class="strategy-card-desc">
+                A transparent rule-based strategy with no machine learning. Uses moving averages, volatility, and participation thresholds.
+            </p>
+            <p class="strategy-card-fit">Best as a benchmark to compare ML strategies against.</p>
+            <button type="button" class="strategy-card-action" data-strategy-action="rule_based">Use this strategy</button>
+        </article>
+    </div>
+</section>
+
+<details class="technical-details">
+    <summary>Show technical details for this signal</summary>
+    <div class="technical-grid">
+        <div class="technical-stat">
+            <p class="metric-label" title="Model confidence score for the latest signal (0 to 1).">Raw confidence</p>
+            <p class="metric-value" id="tech-confidence">n/a</p>
+        </div>
+        <div class="technical-stat">
+            <p class="metric-label" title="Number of walk-forward folds used to evaluate this strategy.">Walk-forward folds</p>
+            <p class="metric-value" id="tech-folds">n/a</p>
+        </div>
+        <div class="technical-stat">
+            <p class="metric-label" title="Macro-F1 score on held-out test data. Averages precision/recall fairly across all classes.">Test macro-F1</p>
+            <p class="metric-value" id="tech-macro-f1">n/a</p>
+        </div>
+        <div class="technical-stat">
+            <p class="metric-label" title="Sharpe ratio of the strategy returns (risk-adjusted performance).">Sharpe ratio</p>
+            <p class="metric-value" id="tech-sharpe">n/a</p>
+        </div>
+        <div class="technical-stat">
+            <p class="metric-label" title="Largest peak-to-trough drawdown experienced by the strategy in the evaluation window.">Max drawdown</p>
+            <p class="metric-value" id="tech-drawdown">n/a</p>
+        </div>
+        <div class="technical-stat">
+            <p class="metric-label" title="Number of trades the strategy took during the evaluation window.">Trade count</p>
+            <p class="metric-value" id="tech-trade-count">n/a</p>
+        </div>
+        <div class="technical-stat technical-stat-wide">
+            <p class="metric-label" title="The underlying machine-learning engine producing the signal.">Engine</p>
+            <p class="metric-value" id="tech-engine">n/a</p>
+        </div>
+        <div class="technical-stat technical-stat-wide">
+            <p class="metric-label" title="The trading policy applied on top of model probabilities.">Policy</p>
+            <p class="metric-value" id="tech-policy">n/a</p>
+        </div>
+    </div>
+    <p class="technical-note" id="tech-note">
+        These technical details are available for users who want to inspect the underlying methodology.
+    </p>
+</details>
 {% endblock %}
 
 {% block extra_js %}
-<!--loads javascript that controls the strategies demo behaviour-->
+<script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
+<script id="strategy-registry-data" type="application/json">{{ strategy_registry|tojson }}</script>
 <script src="{{ url_for('static', filename='css/js/strategies.js') }}"></script>
 {% endblock %}

@@ -1,35 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <!--sets character encoding for the page-->
-    <meta charset="UTF-8">
+{% extends "base.html" %}
 
-    <!--page title shown in the browser tab-->
-    <title>Sign out | LiveStrat</title>
+{% block title %}Sign out | LiveStrat{% endblock %}
 
-    <!--loads the base styles used across the app-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-</head>
-<body>
-    <!--container for the sign out confirmation content-->
-    <div style="padding:32px;">
-        <!--page heading-->
-        <h1>Sign out</h1>
+{% block content %}
+<div class="page-header">
+    <h1>Sign out</h1>
+    <p>End the current LiveStrat session and return to the sign-in screen.</p>
+</div>
 
-        <!--confirmation message-->
-        <p style="margin-top:8px;">Are you sure you want to sign out?</p>
-
-        <!--action links for confirming or cancelling sign out-->
-        <div style="margin-top:16px;">
-            <!--link that completes the sign out process-->
-            <a href="{{ url_for('logout_confirmed') }}">Yes, sign me out</a>
-
-            <!--visual separator between links-->
-            <span style="margin:0 8px;">|</span>
-
-            <!--link to return to the dashboard without signing out-->
-            <a href="{{ url_for('dashboard') }}">Cancel</a>
-        </div>
+<div class="card" style="max-width: 720px;">
+    <div class="soft-panel">
+        <p class="metric-label">Current account</p>
+        <p class="metric-value">{{ demo_user or 'Demo User' }}</p>
+        <p class="note" style="margin-top: 8px;">You can sign back in at any time and continue exploring the product.</p>
     </div>
-</body>
-</html>
+
+    <div class="strategy-action-row" style="margin-top: 18px;">
+        <a href="{{ url_for('logout_confirmed') }}" class="button-link button-danger">Sign out now</a>
+        <a href="{{ url_for('dashboard') }}" class="button-link button-secondary">Return to dashboard</a>
+    </div>
+</div>
+{% endblock %}

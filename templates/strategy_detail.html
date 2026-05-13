@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Strategy Detail | LiveStrat{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/strategy_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <p class="dashboard-kicker">Strategy detail</p>
+    <h1 id="strategy-detail-title">{{ strategy_detail_payload.get('preset', {}).get('name', 'Strategy') }}</h1>
+    <p id="strategy-detail-tagline">
+        {{ strategy_detail_payload.get('strategy_page_brief', {}).get('tagline', strategy_detail_payload.get('preset', {}).get('tagline', 'Detailed strategy context will appear here.')) }}
+    </p>
+</div>
+
+<section class="strategy-detail-hero">
+    <article class="strategy-detail-hero-card">
+        <div class="strategy-detail-hero-top">
+            <div>
+                <p class="workspace-status-label">Current strategy fit</p>
+                <h2 id="strategy-detail-name">{{ strategy_detail_payload.get('preset', {}).get('name', 'Strategy') }}</h2>
+                <p class="note" id="strategy-detail-brief">
+                    {{ strategy_detail_payload.get('resolved_config', {}).get('evaluation_basis_note', 'Strategy evaluation basis will appear here.') }}
+                </p>
+            </div>
+            <div class="strategy-detail-hero-badges">
+                <span class="badge" id="strategy-detail-readiness">
+                    {{ strategy_detail_payload.get('resolved_config', {}).get('governance', {}).get('readiness_label', 'Loading') }}
+                </span>
+                <span class="badge" id="strategy-detail-timeframe">
+                    {{ strategy_detail_payload.get('resolved_config', {}).get('resolved_timeframe', '4h') }}
+                </span>
+            </div>
+        </div>
+
+        <div class="strategy-detail-controls">
+            <div>
+                <label for="strategy-detail-asset">Asset</label>
+                <select id="strategy-detail-asset">
+                    {% for symbol in market_symbols %}
+                    <option value="{{ symbol }}" {% if symbol == selected_symbol %}selected{% endif %}>{{ symbol.replace('USDT', ' / USDT') }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="strategy-detail-timeframe-select">Timeframe</label>
+                <select id="strategy-detail-timeframe-select">
+                    <option value="1h" {% if strategy_detail_payload.get('requested_timeframe') == '1h' %}selected{% endif %}>1 hour</option>
+                    <option value="4h" {% if strategy_detail_payload.get('requested_timeframe', '4h') == '4h' %}selected{% endif %}>4 hours</option>
+                </select>
+            </div>
+            <div class="strategy-detail-actions">
+                <a class="button-secondary button-link" href="{{ url_for('strategies') }}">Back to strategy library</a>
+                <button type="button" id="strategy-detail-refresh">Refresh strategy view</button>
+            </div>
+        </div>
+    </article>
+    <article class="strategy-detail-side-card">
+        <p class="workspace-status-label">When to use it</p>
+        <strong class="strategy-detail-side-title" id="strategy-detail-best-for">Best for</strong>
+        <p class="note" id="strategy-detail-best-for-copy">
+            {{ strategy_detail_payload.get('strategy_page_brief', {}).get('best_for', strategy_detail_payload.get('preset', {}).get('best_for', 'Usage guidance will appear here.')) }}
+        </p>
+        <div class="detail-list">
+            <div class="detail-row">
+                <span>Risk profile</span>
+                <strong id="strategy-detail-risk">{{ strategy_detail_payload.get('preset', {}).get('risk_profile', 'n/a') }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Core engine</span>
+                <strong id="strategy-detail-engine">{{ strategy_detail_payload.get('preset', {}).get('core_engine', 'n/a') }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Daily fit</span>
+                <strong id="strategy-detail-daily-fit">{{ strategy_detail_payload.get('resolved_config', {}).get('daily_confirmation_fit', 'n/a')|replace('_', ' ')|title }}</strong>
+            </div>
+        </div>
+    </article>
+</section>
+
+<section class="strategy-detail-grid">
+    <article class="card">
+        <div class="section-heading">
+            <div>
+                <h2>Current Fit and Evidence</h2>
+                <p class="note">How the strategy currently fits the selected asset and timeframe.</p>
+            </div>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <p class="metric-label" title="Whether this strategy is ready for production-style use, conditional on data freshness, or research-only.">Use level</p>
+                <p class="metric-value" id="strategy-detail-tier">{{ strategy_detail_payload.get('resolved_config', {}).get('governance', {}).get('deployment_tier', 'n/a')|replace('_', ' ')|title }}</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="Which underlying strategy family currently leads the decision: market-only, market+futures, binary directional, or context-aware.">Lead family</p>
+                <p class="metric-value" id="strategy-detail-family">{{ strategy_detail_payload.get('family_governance', {}).get('lead_family_label', 'n/a') }}</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="How well the strategy matches the requested timeframe. Direct = exact match. Reduced = approximation or fallback.">Timeframe fit</p>
+                <p class="metric-value" id="strategy-detail-fit">{{ strategy_detail_payload.get('resolved_config', {}).get('timeframe_fit_label', 'n/a')|replace('_', ' ')|title }}</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="The role sentiment and on-chain context play for this strategy: supportive confirmation, cautious veto, or background only.">Context role</p>
+                <p class="metric-value" id="strategy-detail-context-role">{{ strategy_detail_payload.get('context_overlay_role', 'n/a')|replace('_', ' ')|title }}</p>
+            </div>
+        </div>
+        <div class="strategy-evidence-block" id="strategy-detail-governance-block">
+            <p class="evidence-label">Evaluation basis</p>
+            <p class="note" id="strategy-detail-governance-note">
+                {{ strategy_detail_payload.get('resolved_config', {}).get('governance', {}).get('evaluation_reason', 'Evidence notes will appear here.') }}
+            </p>
+        </div>
+        <div class="strategy-evidence-block" id="strategy-detail-timeframe-block">
+            <p class="evidence-label">Timeframe note</p>
+            <p class="note" id="strategy-detail-timeframe-note">
+                {{ strategy_detail_payload.get('strategy_page_brief', {}).get('timeframe_note', 'Timeframe note will appear here.') }}
+            </p>
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="section-heading">
+            <div>
+                <h2>Evidence and scorecard</h2>
+                <p class="note">A compact view of evidence quality and project depth.</p>
+            </div>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <p class="metric-label" title="Held-out classification accuracy from the most recent walk-forward evaluation: how often the model's directional call was correct on unseen data.">Held-out accuracy</p>
+                <p class="metric-value" id="strategy-detail-accuracy">n/a</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="Strategy return minus buy-and-hold return over the same window. Negative means the strategy underperformed simply holding the asset.">Excess return vs. hold</p>
+                <p class="metric-value" id="strategy-detail-excess">n/a</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="A 0-5 score reflecting methodological depth: validation discipline, ablation coverage, and source-role rigor.">Academic depth</p>
+                <p class="metric-value" id="strategy-detail-depth">n/a / 5</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="How readable the strategy logic is. 5/5 means transparent rules; 1/5 means black-box ensembles.">Interpretability</p>
+                <p class="metric-value" id="strategy-detail-interpretability">n/a / 5</p>
+            </div>
+        </div>
+        <div class="strategy-evidence-block">
+            <p class="evidence-label">Scorecard summary</p>
+            <p class="note" id="strategy-detail-scorecard-summary">
+                {{ strategy_detail_payload.get('resolved_config', {}).get('scorecard', {}).get('scorecard_summary', 'Scorecard summary will appear here.') }}
+            </p>
+        </div>
+        <div class="strategy-evidence-block">
+            <p class="evidence-label">Reference summary</p>
+            <p class="note" id="strategy-detail-reference-summary">
+                {{ strategy_detail_payload.get('resolved_config', {}).get('scorecard', {}).get('reference_summary', 'Reference summary will appear here.') }}
+            </p>
+        </div>
+    </article>
+</section>
+
+<section class="strategy-detail-grid">
+    <article class="card">
+        <div class="section-heading">
+            <div>
+                <h2>What it uses</h2>
+                <p class="note">Required, optional, and unavailable layers for the selected asset.</p>
+            </div>
+        </div>
+        <div class="detail-list">
+            <div class="detail-row">
+                <span>Required layers</span>
+                <strong id="strategy-detail-required">n/a</strong>
+            </div>
+            <div class="detail-row">
+                <span>Optional layers</span>
+                <strong id="strategy-detail-optional">n/a</strong>
+            </div>
+            <div class="detail-row">
+                <span>Unavailable layers</span>
+                <strong id="strategy-detail-unavailable">n/a</strong>
+            </div>
+            <div class="detail-row">
+                <span>Target family</span>
+                <strong id="strategy-detail-target">n/a</strong>
+            </div>
+            <div class="detail-row">
+                <span>Model family</span>
+                <strong id="strategy-detail-model">n/a</strong>
+            </div>
+            <div class="detail-row">
+                <span>Policy family</span>
+                <strong id="strategy-detail-policy">n/a</strong>
+            </div>
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="section-heading">
+            <div>
+                <h2>Context and Backup</h2>
+                <p class="note">How LiveStrat treats sentiment, on-chain, and risk checks for this strategy.</p>
+            </div>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <p class="metric-label" title="The dominant theme detected from recent asset news (e.g. Quiet, Risk-on, Risk-off).">News theme</p>
+                <p class="metric-value" id="strategy-detail-news-theme">n/a</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="The on-chain regime reading for this asset (when network telemetry coverage is available).">On-chain support</p>
+                <p class="metric-value" id="strategy-detail-onchain-support">n/a</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="Quality of the futures data coverage. Robust = full coverage. Partial = some derived/fallback fields.">Futures support</p>
+                <p class="metric-value" id="strategy-detail-futures-support">n/a</p>
+            </div>
+            <div class="metric-box">
+                <p class="metric-label" title="How fresh the saved evaluation outputs are. Older windows reduce signal confidence automatically.">Refresh status</p>
+                <p class="metric-value" id="strategy-detail-refresh-state">n/a</p>
+            </div>
+        </div>
+        <div class="strategy-evidence-block">
+            <p class="evidence-label">Context reliability</p>
+            <p class="note" id="strategy-detail-context-summary">
+                {{ strategy_detail_payload.get('context_assessment', {}).get('context_reliability_summary', 'Context summary will appear here.') }}
+            </p>
+        </div>
+        <div class="strategy-evidence-block">
+            <p class="evidence-label">Overlay reading</p>
+            <p class="note" id="strategy-detail-overlay-summary">
+                {{ strategy_detail_payload.get('context_overlay_entry', {}).get('context_overlay_summary', 'Overlay summary will appear here.') }}
+            </p>
+        </div>
+    </article>
+</section>
+
+<script id="strategy-detail-data" type="application/json">{{ strategy_detail_payload|tojson }}</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='css/js/strategy_detail.js') }}"></script>
+{% endblock %}

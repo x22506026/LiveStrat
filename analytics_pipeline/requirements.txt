@@ -1,0 +1,14 @@
+# Core data + ML stack
+pandas==2.3.3
+numpy==2.2.6
+scipy==1.15.3
+scikit-learn==1.7.2
+requests==2.32.5
+
+# Plotting (used by build_report_figures.py)
+matplotlib==3.10.8
+
+# Deep-learning stack (LSTM strategy variants + FinBERT sentiment)
+tensorflow==2.20.0
+torch==2.10.0+cpu
+transformers==4.46.3

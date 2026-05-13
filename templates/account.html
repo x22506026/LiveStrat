@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Account | LiveStrat{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <p>Manage your LiveStrat account, saved strategies, message history, and delivery preferences.</p>
+</div>
+
+<section class="hero-panel account-hero">
+    <p class="eyebrow">Platform profile</p>
+    <h2>{{ current_user.full_name if current_user else 'LiveStrat User' }}</h2>
+    <p>{{ account_email or 'LiveStrat account' }}</p>
+</section>
+
+<div class="account-grid">
+    <div class="card">
+        <h3>Account status</h3>
+        <div class="soft-panel">
+            <p class="metric-label">Session</p>
+            <p class="metric-value">Active</p>
+            <p class="note">Use this account area for saved strategies, preferences, and message history.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Saved strategy focus</h3>
+        <div class="detail-list">
+            <div class="detail-row">
+                <span>Saved profiles</span>
+                <strong>{{ saved_strategy_profiles|length }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Builder support</span>
+                <strong>Available</strong>
+            </div>
+            <div class="detail-row">
+                <span>Comparison mode</span>
+                <strong>Enabled</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Message center</h3>
+        <div class="soft-panel">
+            <p class="metric-value">Messages and Telegram</p>
+            <p class="note">Open the message center to generate account messages, review saved history, and set up Telegram delivery.</p>
+            <div class="strategy-action-row">
+                <a href="{{ url_for('notifications') }}" class="button-link button-secondary">Open message center</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card account-saved-strategies">
+    <h3>Saved Strategies</h3>
+    <p class="note">Recent strategy profiles saved to this PostgreSQL-backed account.</p>
+
+    {% if saved_strategy_profiles %}
+        <div class="account-strategy-list">
+            {% for profile in saved_strategy_profiles %}
+            <article class="account-strategy-card">
+                <div>
+                    <h4>{{ profile.name }}</h4>
+                    <p class="note">
+                        {{ profile.asset }} |
+                        {{ profile.profile_tag or 'research' }} |
+                        {{ profile.updated_at.strftime('%d %b %Y %H:%M') }}
+                    </p>
+                    <p class="note">
+                        {% set timeframe_policy = profile.config_json.get('timeframe_policy', {}) if profile.config_json else {} %}
+                        {% set selected_timeframes = timeframe_policy.get('selected_timeframes', []) %}
+                        Timeframes:
+                        {{ selected_timeframes|join(' + ') if selected_timeframes else profile.config_json.get('resolved_timeframe', 'n/a') if profile.config_json else 'n/a' }}
+                        |
+                        Current signal family:
+                        {{ profile.config_json.get('family_governance', {}).get('operational_family_label', 'n/a') if profile.config_json else 'n/a' }}
+                    </p>
+                </div>
+                <span class="profile-pill">
+                    {{ profile.config_json.get('model_family', 'strategy')|replace('_', ' ') if profile.config_json else 'strategy' }}
+                </span>
+            </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="soft-panel">
+            <p class="metric-value">No saved strategies yet</p>
+            <p class="note">Use the Strategies tab to save a preset or custom builder configuration to this account.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="account-grid account-lower-grid">
+    <div class="card">
+        <h3>Preferences</h3>
+        <div class="account-form-grid">
+            <div>
+                <label for="account-display-name">Name</label>
+                <input id="account-display-name" type="text" value="{{ current_user.full_name if current_user else 'LiveStrat User' }}" readonly>
+            </div>
+            <div>
+                <label for="account-mode">Username</label>
+                <input id="account-mode" type="text" value="{{ current_user.username if current_user else 'Account user' }}" readonly>
+            </div>
+        </div>
+        <p class="note" style="margin-top: 14px;">Profile settings are structured for saved strategies, message preferences, and account-based access.</p>
+    </div>
+
+    <div class="card account-signout-card">
+        <h3>Sign out</h3>
+        <p class="note">End the current LiveStrat session and return to the entry screen.</p>
+        <div class="strategy-action-row">
+            <a href="{{ url_for('logout') }}" class="button-link button-danger">Sign out</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
