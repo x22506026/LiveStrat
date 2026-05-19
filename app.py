@@ -90,6 +90,25 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 db.init_app(app)
 
 PROCESSED_DIR = PROJECT_DIR / "analytics_pipeline" / "data" / "processed"
+
+# in-process TTL cache for the two slowest endpoints so the page feels instant
+import time as _time
+import threading as _threading
+_PAYLOAD_CACHE = {}
+_PAYLOAD_CACHE_LOCK = _threading.Lock()
+_PAYLOAD_CACHE_TTL_SECONDS = 300
+
+def cached_payload(cache_key, build_fn, ttl=_PAYLOAD_CACHE_TTL_SECONDS):
+    now = _time.time()
+    with _PAYLOAD_CACHE_LOCK:
+        entry = _PAYLOAD_CACHE.get(cache_key)
+        if entry and (now - entry[0]) < ttl:
+            return entry[1]
+    payload = build_fn()
+    with _PAYLOAD_CACHE_LOCK:
+        _PAYLOAD_CACHE[cache_key] = (now, payload)
+    return payload
+
 RAW_BINANCE_DIR = PROJECT_DIR / "analytics_pipeline" / "data" / "raw" / "binance"
 SENTIMENT_SUMMARY_PATH = PROCESSED_DIR / "sentiment_summary_1d.csv"
 SUPPORTED_MARKET_TIMEFRAMES = ("1h", "4h", "1d")
@@ -301,7 +320,11 @@ def safe_float(value, default=0.0):
     try:
         if value in (None, ""):
             return default
-        return float(value)
+        result = float(value)
+        # NaN and inf are not valid JSON so collapse them to the default
+        if result != result or result in (float("inf"), float("-inf")):
+            return default
+        return result
     except (TypeError, ValueError):
         return default
 
@@ -397,6 +420,45 @@ def ensure_supported_asset_summaries(summaries, timeframe=None):
     return summaries
 
 
+def _load_per_asset_summary(symbol, timeframe):
+    # latest per-asset market summary CSV; one row, return as dict
+    pattern = f"{symbol}_{timeframe}_market_summary_*.csv"
+    path = get_latest_processed_file(pattern)
+    if path is None:
+        # also try undated file
+        legacy = PROCESSED_DIR / f"{symbol}_{timeframe}_market_summary.csv"
+        if legacy.exists():
+            path = legacy
+        else:
+            return {}
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return {}
+    if df.empty:
+        return {}
+    row = df.iloc[-1].to_dict()
+    return {k: v for k, v in row.items() if v is not None and not (isinstance(v, float) and pd.isna(v))}
+
+
+def fill_market_behaviour_fields(summaries, timeframe):
+    # the consolidated overview leaves volatility_status / rule_signal blank for some
+    # assets and never writes activity_status. fill from per-asset summary csvs.
+    if not timeframe:
+        timeframe = "4h"
+    for symbol, summary in summaries.items():
+        per_asset = _load_per_asset_summary(symbol, timeframe)
+        for key in ("volatility_status", "rule_signal", "latest_volume_zscore", "latest_volatility_20"):
+            current = summary.get(key)
+            is_missing = current in (None, "", "n/a", "nan") or (isinstance(current, float) and pd.isna(current))
+            if is_missing and key in per_asset:
+                summary[key] = per_asset[key]
+        if summary.get("activity_status") in (None, "", "n/a", "nan") or (
+            isinstance(summary.get("activity_status"), float) and pd.isna(summary.get("activity_status"))
+        ):
+            summary["activity_status"] = classify_activity_status(summary.get("latest_volume_zscore"))
+
+
 def get_merged_market_summaries(requested_timeframe=None):
     summary_bundle = load_market_summaries_bundle(requested_timeframe)
     summaries = summary_bundle["summaries"]
@@ -444,6 +506,7 @@ def get_merged_market_summaries(requested_timeframe=None):
         summaries.setdefault(summary_symbol, {})
         summaries[summary_symbol].update(overlay_summary)
     ensure_supported_asset_summaries(summaries, summary_bundle["timeframe"] or requested_timeframe)
+    fill_market_behaviour_fields(summaries, summary_bundle["timeframe"] or requested_timeframe)
     return summaries, summary_bundle
 
 
@@ -1041,6 +1104,203 @@ def load_recent_market_chart(symbol, requested_timeframe="4h", max_points=48):
         "resolved_timeframe": resolved_timeframe,
         "refreshed_at": datetime.fromtimestamp(chart_path.stat().st_mtime).isoformat(),
         "points": points,
+    }
+
+
+def load_backtest_curve(symbol, timeframe="4h", variant="binary"):
+    # read the most recent backtest equity curve for this asset and timeframe
+    if variant == "binary":
+        pattern = f"{symbol}_{timeframe}_market_futures_binary_backtest_curve_*.csv"
+    else:
+        pattern = f"{symbol}_{timeframe}_market_futures_backtest_curve_*.csv"
+    path = get_latest_processed_file(pattern)
+    empty = {"available": False, "points": [], "window": None, "source_file": None}
+    if not path:
+        return empty
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return empty
+    if df.empty:
+        return empty
+
+    points = []
+    for _, row in df.iterrows():
+        points.append({
+            "time": str(row.get("open_time", "")),
+            "close": safe_float(row.get("close")),
+            "strategy_equity": safe_float(row.get("strategy_equity_curve", 1.0), 1.0),
+            "buy_hold_equity": safe_float(row.get("buy_hold_equity_curve", 1.0), 1.0),
+            "position": safe_float(row.get("position", 0.0)),
+            "action": str(row.get("action", "")),
+        })
+
+    final_strategy = points[-1]["strategy_equity"] if points else 1.0
+    final_hold = points[-1]["buy_hold_equity"] if points else 1.0
+
+    peak = 1.0
+    max_dd = 0.0
+    for point in points:
+        peak = max(peak, point["strategy_equity"])
+        if peak > 0:
+            dd = (point["strategy_equity"] / peak) - 1.0
+            if dd < max_dd:
+                max_dd = dd
+
+    return {
+        "available": True,
+        "asset": symbol,
+        "timeframe": timeframe,
+        "variant": variant,
+        "source_file": path.name,
+        "point_count": len(points),
+        "points": points,
+        "strategy_total_return_pct": (final_strategy - 1.0) * 100.0,
+        "buy_hold_total_return_pct": (final_hold - 1.0) * 100.0,
+        "excess_return_pct": (final_strategy - final_hold) * 100.0,
+        "max_drawdown_pct": max_dd * 100.0,
+        "window": {
+            "start": points[0]["time"] if points else None,
+            "end": points[-1]["time"] if points else None,
+        },
+    }
+
+
+def load_walkforward_folds(symbol, timeframe="4h", variant="binary"):
+    # read the per-fold table for this asset and timeframe
+    if variant == "binary":
+        pattern = f"market_futures_binary_walkforward_detail_{timeframe}_*.csv"
+    else:
+        pattern = f"market_futures_walkforward_detail_{timeframe}_*.csv"
+    path = get_latest_processed_file(pattern)
+    empty = {"available": False, "folds": [], "fold_count": 0, "source_file": None}
+    if not path:
+        return empty
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return empty
+    if df.empty or "symbol" not in df.columns:
+        return empty
+
+    asset_rows = df[df["symbol"] == symbol]
+    if asset_rows.empty:
+        return empty
+
+    folds = []
+    for _, row in asset_rows.iterrows():
+        folds.append({
+            "fold_number": int(safe_float(row.get("fold_number", 0))),
+            "test_start": str(row.get("test_start_time", "")),
+            "test_end": str(row.get("test_end_time", "")),
+            "train_rows": int(safe_float(row.get("train_rows", 0))),
+            "test_rows": int(safe_float(row.get("test_rows", 0))),
+            "accuracy": safe_float(row.get("fold_accuracy", 0.0)),
+            "macro_f1": safe_float(row.get("fold_macro_f1", 0.0)),
+            "balanced_accuracy": safe_float(row.get("fold_balanced_accuracy", 0.0)),
+            "strategy_return": safe_float(row.get("selected_strategy_total_return", 0.0)),
+            "buy_hold_return": safe_float(row.get("selected_buy_hold_total_return", 0.0)),
+            "excess_return": safe_float(row.get("selected_excess_return", 0.0)),
+            "sharpe": safe_float(row.get("selected_sharpe_ratio", 0.0)),
+            "trade_count": int(safe_float(row.get("selected_trade_count", 0))),
+            "deployment_active": safe_bool(row.get("selected_deployment_active", False)),
+        })
+    folds.sort(key=lambda fold: fold["fold_number"])
+    return {
+        "available": True,
+        "asset": symbol,
+        "timeframe": timeframe,
+        "variant": variant,
+        "source_file": path.name,
+        "fold_count": len(folds),
+        "folds": folds,
+    }
+
+
+def build_backtest_view_payload(symbol, timeframe="4h", variant="binary"):
+    return {
+        "curve": load_backtest_curve(symbol, timeframe, variant),
+        "folds": load_walkforward_folds(symbol, timeframe, variant),
+    }
+
+
+def load_significance_summary(timeframe="4h"):
+    # read the strategy significance summary written by the pipeline for one timeframe
+    path = PROCESSED_DIR / f"strategy_significance_summary_{timeframe}.csv"
+    empty = {"available": False, "rows": [], "timeframe": timeframe, "source_file": None}
+    if not path.exists():
+        return empty
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return empty
+    if df.empty:
+        return empty
+    rows = []
+    for _, row in df.iterrows():
+        rows.append({
+            "asset": str(row.get("symbol", "")),
+            "timeframe": str(row.get("timeframe", timeframe)),
+            "n_observations": int(safe_float(row.get("n_observations", 0))),
+            "mean_strategy_return": safe_float(row.get("mean_strategy_return", 0.0)),
+            "mean_benchmark_return": safe_float(row.get("mean_benchmark_return", 0.0)),
+            "mean_difference": safe_float(row.get("mean_difference", 0.0)),
+            "bootstrap_p_value": safe_float(row.get("bootstrap_p_value", 0.0)),
+            "bootstrap_ci_low": safe_float(row.get("bootstrap_ci_low", 0.0)),
+            "bootstrap_ci_high": safe_float(row.get("bootstrap_ci_high", 0.0)),
+            "diebold_mariano_stat": safe_float(row.get("diebold_mariano_stat", 0.0)),
+            "diebold_mariano_p_value": safe_float(row.get("diebold_mariano_p_value", 0.0)),
+            "annualised_sharpe": safe_float(row.get("annualised_sharpe", 0.0)),
+            "probabilistic_sharpe_ratio": safe_float(row.get("probabilistic_sharpe_ratio", 0.0)),
+            "deflated_sharpe_ratio": safe_float(row.get("deflated_sharpe_ratio", 0.0)),
+            "n_trials_for_dsr": int(safe_float(row.get("n_trials_for_dsr", 0))),
+            "evidence_label": str(row.get("evidence_label", "no_evidence")),
+        })
+    return {
+        "available": True,
+        "timeframe": timeframe,
+        "source_file": path.name,
+        "rows": rows,
+    }
+
+
+def build_cross_asset_comparison(timeframe="4h"):
+    # merge per-asset walk-forward metrics with the significance summary so the
+    # Analytics page can render one heatmap row per asset
+    summaries, _bundle = get_merged_market_summaries(timeframe)
+    significance = load_significance_summary(timeframe)
+    significance_by_asset = {row["asset"]: row for row in significance.get("rows", [])}
+
+    metric_definitions = [
+        {"key": "accuracy", "label": "Accuracy", "hint": "Held-out classification accuracy. Higher is better."},
+        {"key": "walkforward_sharpe", "label": "WF Sharpe", "hint": "Average Sharpe across walk-forward folds. Higher is better."},
+        {"key": "excess_return", "label": "Excess vs hold", "hint": "Average per-fold strategy return minus buy-and-hold return."},
+        {"key": "macro_f1", "label": "Macro-F1", "hint": "Held-out macro-F1. Fair across classes when long signals are rare."},
+        {"key": "dsr", "label": "DSR", "hint": "Deflated Sharpe Ratio. Adjusts for multiple trials and non-normal returns."},
+    ]
+
+    assets = []
+    for symbol, summary in summaries.items():
+        sig_row = significance_by_asset.get(symbol, {})
+        assets.append({
+            "asset": symbol,
+            "asset_short": symbol.replace("USDT", ""),
+            "metrics": {
+                "accuracy": safe_float(summary.get("test_accuracy", summary.get("walkforward_avg_accuracy", 0.0))),
+                "walkforward_sharpe": safe_float(summary.get("walkforward_avg_sharpe", summary.get("sharpe_ratio", 0.0))),
+                "excess_return": safe_float(summary.get("walkforward_avg_excess_return", summary.get("excess_return", 0.0))),
+                "macro_f1": safe_float(summary.get("test_macro_f1", summary.get("walkforward_avg_macro_f1", 0.0))),
+                "dsr": safe_float(sig_row.get("deflated_sharpe_ratio", 0.0)),
+            },
+            "fold_count": int(safe_float(summary.get("walkforward_fold_count", 0))),
+            "evidence_label": sig_row.get("evidence_label", "no_data"),
+        })
+
+    return {
+        "timeframe": timeframe,
+        "assets": assets,
+        "metric_definitions": metric_definitions,
+        "significance_window": significance.get("source_file"),
     }
 
 
@@ -2110,6 +2370,41 @@ def market_chart_api():
     return jsonify(load_recent_market_chart(asset, timeframe, max_points=points))
 
 
+@app.route("/api/backtest-curve")
+def backtest_curve_api():
+    redirect_response = require_demo_access()
+    if redirect_response:
+        return redirect_response
+    asset = (request.args.get("asset") or "BTCUSDT").strip().upper()
+    timeframe = (request.args.get("timeframe") or "4h").strip()
+    variant = (request.args.get("variant") or "binary").strip().lower()
+    if variant not in {"binary", "tri"}:
+        variant = "binary"
+    return jsonify(build_backtest_view_payload(asset, timeframe, variant))
+
+
+@app.route("/api/cross-asset-metrics")
+def cross_asset_metrics_api():
+    redirect_response = require_demo_access()
+    if redirect_response:
+        return redirect_response
+    timeframe = (request.args.get("timeframe") or "4h").strip()
+    if timeframe not in ("1h", "4h", "1d"):
+        timeframe = "4h"
+    return jsonify(build_cross_asset_comparison(timeframe))
+
+
+@app.route("/api/significance-summary")
+def significance_summary_api():
+    redirect_response = require_demo_access()
+    if redirect_response:
+        return redirect_response
+    timeframe = (request.args.get("timeframe") or "4h").strip()
+    if timeframe not in ("1h", "4h", "1d"):
+        timeframe = "4h"
+    return jsonify(load_significance_summary(timeframe))
+
+
 @app.route("/api/dashboard-overview")
 def dashboard_overview_api():
     redirect_response = require_demo_access()
@@ -2141,7 +2436,11 @@ def analytics_summary_api():
 
     asset = (request.args.get("asset") or "BTCUSDT").strip().upper()
     timeframe = (request.args.get("timeframe") or "4h").strip()
-    return jsonify(build_analytics_payload(asset, timeframe))
+    payload = cached_payload(
+        f"analytics:{asset}:{timeframe}",
+        lambda: build_analytics_payload(asset, timeframe),
+    )
+    return jsonify(payload)
 
 
 @app.route("/api/evaluation-evidence")
@@ -2151,7 +2450,10 @@ def evaluation_evidence_api():
         return redirect_response
 
     timeframe = (request.args.get("timeframe") or "4h").strip()
-    payload = build_evaluation_evidence_payload(timeframe)
+    payload = cached_payload(
+        f"evidence:{timeframe}",
+        lambda: build_evaluation_evidence_payload(timeframe),
+    )
     if request.args.get("format") == "csv":
         fieldnames = [
             "row_type",
@@ -2593,7 +2895,7 @@ def notification_events_api():
                 preferences = current_user.alert_preferences.to_alert_engine_preferences()
             alert_payload = build_alert_response(asset, market_summary, preferences)
             persisted = persist_alert_events_for_user(current_user, alert_payload.get("alerts", []))
-            telegram_attempts = dispatch_telegram_ready_messages(saved_preferences, persisted)
+            telegram_attempts = dispatch_telegram_ready_messages(persisted)
             return jsonify(
                 {
                     "symbol": asset,
@@ -2716,4 +3018,4 @@ def init_db_command():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)

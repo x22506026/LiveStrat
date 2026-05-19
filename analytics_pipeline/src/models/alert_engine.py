@@ -175,6 +175,9 @@ def build_alerts_for_market_summary(
             title = f"{symbol}: Hold signal"
             action = "Monitor the asset and wait for clearer confirmation."
 
+        forecast_bit = f" Forecast {predicted_return * 100:+.2f}%"
+        if predicted_price:
+            forecast_bit += f" (target {predicted_price:,.2f})"
         alerts.append(
             _make_alert(
                 alert_id=f"{symbol}-strategy-signal",
@@ -183,11 +186,10 @@ def build_alerts_for_market_summary(
                 severity=severity,
                 title=title,
                 message=(
-                    f"{strategy_display_name} on {strategy_timeframe} reads {signal_label} with score/confidence "
-                    f"{confidence * 100:.1f}%. The forecasted move is {predicted_return * 100:.2f}%"
-                    f"{f', giving an estimated price near {predicted_price:,.2f}' if predicted_price else ''}. "
-                    f"Technical indicators read {_display_signal(indicator_signal)}. Latest policy action is "
-                    f"{policy_action.replace('_', ' ')}."
+                    f"Price {latest_close:,.2f} ({return_24h:+.2f}% 24h). "
+                    f"Strategy: {strategy_display_name} on {strategy_timeframe}. "
+                    f"Confidence {confidence * 100:.1f}%.{forecast_bit}. "
+                    f"Indicator: {_display_signal(indicator_signal)}."
                 ),
                 action=action,
             )
@@ -282,24 +284,8 @@ def build_alerts_for_market_summary(
                 )
             )
 
-    if context_variant:
-        context_theme_note = ""
-        if gdelt_theme != "none":
-            context_theme_note = f" News theme: {_display_label(gdelt_theme)}."
-        alerts.append(
-            _make_alert(
-                alert_id=f"{symbol}-context-mix",
-                symbol=symbol,
-                category="context",
-                severity="low",
-                title=f"{symbol} selected context mix updated",
-                message=(
-                    "The current selected context mix is "
-                    f"{context_variant.replace('_', ' ')}.{context_theme_note}"
-                ),
-                action="Review Analytics to see how this context mix performed.",
-            )
-        )
+    # context-mix alert intentionally omitted from generation — it is housekeeping,
+    # not actionable. The Analytics page surfaces the active context family directly.
 
     return alerts
 

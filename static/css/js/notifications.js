@@ -276,8 +276,8 @@ function getNotificationCapabilityState(summary) {
 
     if (sentimentSource === 'fear_greed_market_fallback') {
         return {
-            modeLabel: 'Backup context',
-            note: 'This asset is using market-wide sentiment because asset-specific news sentiment is unavailable.',
+            modeLabel: 'Backup',
+            note: 'Asset news unavailable. Using broad market sentiment instead.',
             sentimentAvailable,
             gdeltAvailable,
             onchainAvailable,
@@ -288,7 +288,7 @@ function getNotificationCapabilityState(summary) {
     if (!sentimentAvailable && !onchainAvailable && !defiAvailable) {
         return {
             modeLabel: 'Reduced',
-            note: 'This asset has no usable sentiment, network on-chain, or ecosystem TVL context, so signals are driven mainly by market and futures layers.',
+            note: 'No usable context. Signals driven by market and futures only.',
             sentimentAvailable,
             gdeltAvailable,
             onchainAvailable,
@@ -298,7 +298,7 @@ function getNotificationCapabilityState(summary) {
 
     return {
         modeLabel: 'Ready',
-        note: 'This asset can use its currently available context layers.',
+        note: 'All available context layers in use.',
         sentimentAvailable,
         gdeltAvailable,
         onchainAvailable,

@@ -124,18 +124,31 @@ def serialize_notification_event(event):
     }
 
 
-def build_telegram_ready_payload(user, preferences, event):
+def build_telegram_ready_payload(preferences, event):
     if not preferences.telegram_enabled or not preferences.telegram_chat_id:
         return None
 
+    from datetime import datetime, timezone
+
+    timestamp = datetime.now(timezone.utc).strftime("%H:%M UTC")
+    headline = (event.title or "").strip()
+    body = (event.message or "").strip()
+    action = (event.action or "Open LiveStrat to review.").strip()
+    severity = (event.severity or "").lower()
+    severity_tag = f"[{severity.upper()}] " if severity in ("medium", "high") else ""
+
+    lines = [
+        f"LiveStrat | {event.symbol}",
+        f"{severity_tag}{headline}",
+        "",
+        body,
+        "",
+        f"Action: {action}",
+        f"({timestamp})",
+    ]
     return {
         "chat_id": preferences.telegram_chat_id,
-        "text": (
-            f"{event.title}\n"
-            f"{event.message}\n"
-            f"Suggested action: {event.action or 'Review in LiveStrat.'}\n"
-            f"Account: {user.username}"
-        ),
+        "text": "\n".join(lines),
         "parse_mode": None,
     }
 
@@ -165,7 +178,7 @@ def persist_alert_events_for_user(user, alerts):
         "telegram_ready_messages": [
             payload
             for payload in (
-                build_telegram_ready_payload(user, preferences, event)
+                build_telegram_ready_payload(preferences, event)
                 for event in created_events
             )
             if payload is not None
@@ -173,7 +186,7 @@ def persist_alert_events_for_user(user, alerts):
     }
 
 
-def dispatch_telegram_ready_messages(preferences, persisted_events):
+def dispatch_telegram_ready_messages(persisted_events):
     attempts = []
     telegram_messages = persisted_events.get("telegram_ready_messages", [])
 

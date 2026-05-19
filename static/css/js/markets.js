@@ -286,7 +286,43 @@ function renderMarketChart(chartPayload) {
     }
 }
 
-function renderMarketSnapshot(snapshot) {
+function deriveMarketBehaviour(points) {
+    // computed from the same chart bars shown above so every asset has values
+    const closes = (points || []).map((p) => Number(p.close)).filter((v) => Number.isFinite(v) && v > 0);
+    const volumes = (points || []).map((p) => Number(p.volume || 0)).filter(Number.isFinite);
+    const result = { volatilityLabel: null, activityLabel: null, indicatorLabel: null };
+
+    if (closes.length >= 5) {
+        const returns = [];
+        for (let i = 1; i < closes.length; i += 1) {
+            returns.push(Math.log(closes[i] / closes[i - 1]));
+        }
+        const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+        const variance = returns.reduce((a, b) => a + (b - mean) ** 2, 0) / returns.length;
+        const stdev = Math.sqrt(variance);
+        result.volatilityLabel = stdev > 0.025 ? 'High' : (stdev > 0.012 ? 'Medium' : 'Low');
+
+        const window = Math.min(20, closes.length);
+        const tail = closes.slice(-window);
+        const ma = tail.reduce((a, b) => a + b, 0) / window;
+        const last = closes[closes.length - 1];
+        if (last > ma * 1.005) result.indicatorLabel = 'Buy';
+        else if (last < ma * 0.995) result.indicatorLabel = 'Avoid';
+        else result.indicatorLabel = 'Hold';
+    }
+
+    if (volumes.length >= 5) {
+        const vMean = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+        const vVar = volumes.reduce((a, b) => a + (b - vMean) ** 2, 0) / volumes.length;
+        const vStd = Math.sqrt(vVar) || 1;
+        const z = (volumes[volumes.length - 1] - vMean) / vStd;
+        result.activityLabel = z >= 1.0 ? 'Elevated' : (z <= -0.5 ? 'Quiet' : 'Normal');
+    }
+
+    return result;
+}
+
+function renderMarketSnapshot(snapshot, derived = {}) {
     if (!snapshot) {
         return;
     }
@@ -297,9 +333,14 @@ function renderMarketSnapshot(snapshot) {
     const assetLabel = formatAsset(snapshot.asset);
     latestClose.textContent = Number(snapshot.latest_close || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
     return24h.textContent = formatSignedPercent(returnValue);
-    volatility.textContent = contextAvailabilityLabel(snapshot.volatility_status, 'Unknown');
-    marketActivity.textContent = snapshot.activity_status || 'n/a';
-    marketRuleSignal.textContent = formatDecisionLabel(snapshot.rule_signal);
+    const rawVolatility = contextAvailabilityLabel(snapshot.volatility_status, '');
+    const rawActivity = snapshot.activity_status || '';
+    const rawRule = formatDecisionLabel(snapshot.rule_signal);
+    const isMissing = (v) => !v || ['n/a', 'unknown', 'not available', ''].includes(String(v).toLowerCase());
+
+    volatility.textContent = isMissing(rawVolatility) ? (derived.volatilityLabel || 'n/a') : rawVolatility;
+    marketActivity.textContent = isMissing(rawActivity) ? (derived.activityLabel || 'n/a') : rawActivity;
+    marketRuleSignal.textContent = isMissing(rawRule) ? (derived.indicatorLabel || 'n/a') : rawRule;
     marketSummary.textContent = `${assetLabel} is ${returnValue >= 0 ? 'up' : 'down'} ${Math.abs(returnValue).toFixed(2)}% over the latest 24h window. Volatility is ${contextAvailabilityLabel(snapshot.volatility_status, 'unknown').toLowerCase()} and activity is ${String(snapshot.activity_status || 'normal').toLowerCase()}.`;
 
     if (marketPriceRead) {
@@ -331,7 +372,10 @@ function renderMarketSnapshot(snapshot) {
     }
 
     if (marketSignalMode) {
-        marketSignalMode.textContent = snapshot.context_mode === 'Ready' ? 'Market data ready' : contextAvailabilityLabel(snapshot.context_mode, 'Available');
+        const rawMode = snapshot.context_mode === 'Ready'
+            ? 'Market data ready'
+            : contextAvailabilityLabel(snapshot.context_mode, 'Available');
+        marketSignalMode.textContent = String(rawMode).replace(/Fallback/gi, 'Backup');
     }
 
     if (marketEffectiveSentiment) {
@@ -341,10 +385,10 @@ function renderMarketSnapshot(snapshot) {
     }
     if (marketSentimentNote) {
         marketSentimentNote.textContent = snapshot.effective_sentiment_source === 'unavailable'
-            ? 'No usable sentiment source is available for this asset right now.'
+            ? 'No usable sentiment source for this asset.'
             : snapshot.effective_sentiment_source === 'fear_greed_market_fallback'
-                ? 'Uses broad market sentiment because asset-specific sentiment is not available.'
-                : 'Uses an available sentiment source as supporting context.';
+                ? 'Broad market mood (asset news not available).'
+                : 'Available sentiment source in use.';
     }
 
     if (marketGdeltStatus) {
@@ -354,8 +398,8 @@ function renderMarketSnapshot(snapshot) {
     }
     if (marketNewsNote) {
         marketNewsNote.textContent = snapshot.gdelt_status && snapshot.gdelt_status !== 'unavailable'
-            ? `${Number(snapshot.gdelt_article_count || 0).toFixed(0)} recent article rows are available for this asset.`
-            : 'Asset-specific news is not available, so news should not drive this market read.';
+            ? `${Number(snapshot.gdelt_article_count || 0).toFixed(0)} recent articles for this asset.`
+            : 'Asset news not available right now.';
     }
 
     if (marketOnchainStatus) {
@@ -367,10 +411,10 @@ function renderMarketSnapshot(snapshot) {
     }
     if (marketOnchainNote) {
         marketOnchainNote.textContent = snapshot.onchain_status && snapshot.onchain_status !== 'unavailable'
-            ? 'Network data is available and can be used as confirmation context.'
+            ? 'Network data available as confirmation.'
             : snapshot.onchain_snapshot_status === 'stale'
-                ? `Only an older on-chain snapshot is available (${Number(snapshot.onchain_snapshot_age_days || 0).toFixed(0)} days old).`
-                : 'Network on-chain data is not available for this asset right now.';
+                ? `Older snapshot only (${Number(snapshot.onchain_snapshot_age_days || 0).toFixed(0)}d old).`
+                : 'Network on-chain data not available.';
     }
 
     if (marketDefiStatus) {
@@ -380,8 +424,8 @@ function renderMarketSnapshot(snapshot) {
     }
     if (marketDefiNote) {
         marketDefiNote.textContent = defiContext.available
-            ? `${defiContext.chain_name || 'Chain'} ecosystem TVL is ${formatMoney(defiContext.latest_tvl_usd)}.`
-            : 'DeFiLlama TVL context is not available for this asset.';
+            ? `${defiContext.chain_name || 'Chain'} TVL: ${formatMoney(defiContext.latest_tvl_usd)}.`
+            : 'TVL context not available.';
     }
 
     if (marketCapabilityNote) {
@@ -408,8 +452,8 @@ function renderMarketSnapshot(snapshot) {
     }
     if (marketFuturesNote) {
         marketFuturesNote.textContent = snapshot.futures_completeness_label
-            ? `Futures coverage is ${toTitleCase(snapshot.futures_completeness_label)}. Use this to judge whether leverage and positioning data can support the market view.`
-            : 'Futures coverage detail is not available.';
+            ? `Futures coverage: ${toTitleCase(snapshot.futures_completeness_label)}.`
+            : 'Futures coverage not available.';
     }
 
     if (marketBasisMode) {
@@ -578,7 +622,8 @@ async function renderMarketLane() {
             fetchJson(`/api/market-snapshot?asset=${encodeURIComponent(asset)}&timeframe=${encodeURIComponent(timeframe)}`),
             fetchJson(`/api/market-chart?asset=${encodeURIComponent(asset)}&timeframe=${encodeURIComponent(timeframe)}&points=48`),
         ]);
-        renderMarketSnapshot(snapshot);
+        const derived = deriveMarketBehaviour(chartPayload.points);
+        renderMarketSnapshot(snapshot, derived);
         renderMarketChart(chartPayload);
     } catch (error) {
         renderMarketSnapshot(buildFallbackSnapshot(asset, timeframe));

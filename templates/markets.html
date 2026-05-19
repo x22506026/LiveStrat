@@ -10,8 +10,8 @@
 <section class="markets-toolbar">
     <div class="toolbar-copy">
         <p class="toolbar-kicker">Market reader</p>
-        <h2>Inspect price, behaviour, and what extra context is available.</h2>
-        <p class="note">Strategy decisions and model evidence stay on the Strategies and Analytics tabs.</p>
+        <h2>Inspect an asset.</h2>
+        <p class="note">Strategy decisions live on the Strategies tab.</p>
     </div>
     <div class="toolbar-controls">
         <div class="toolbar-field">
@@ -32,7 +32,6 @@
                 <option value="1d">1 day</option>
             </select>
         </div>
-        <button id="market-generate" type="button" class="toolbar-action">Refresh view</button>
     </div>
 </section>
 
@@ -57,24 +56,24 @@
         <p class="market-side-kicker">Market behaviour</p>
         <div class="market-side-stats">
             <div class="side-stat">
-                <span class="side-stat-label" title="How variable returns have been over the last 20 periods. Higher = more volatile.">Volatility</span>
+                <span class="side-stat-label" title="Variability of returns over the last 20 periods.">Volatility</span>
                 <strong class="side-stat-value" id="market-volatility">n/a</strong>
-                <span class="side-stat-detail" id="market-volatility-meaning">How jumpy the recent market looks.</span>
+                <span class="side-stat-detail" id="market-volatility-meaning">How jumpy the recent market is.</span>
             </div>
             <div class="side-stat">
-                <span class="side-stat-label" title="Recent volume and trade count compared to its 20-period average.">Activity</span>
+                <span class="side-stat-label" title="Recent volume vs its 20-period average.">Activity</span>
                 <strong class="side-stat-value" id="market-activity">n/a</strong>
-                <span class="side-stat-detail" id="market-activity-meaning">Whether recent activity is quiet, normal, or elevated.</span>
+                <span class="side-stat-detail" id="market-activity-meaning">Quiet, normal, or elevated.</span>
             </div>
             <div class="side-stat">
-                <span class="side-stat-label" title="The basic indicator-only read from technical levels (not the ML strategy decision).">Indicator read</span>
+                <span class="side-stat-label" title="Rule-only technical read. Not the ML strategy.">Indicator read</span>
                 <strong class="side-stat-value" id="market-rule-signal">n/a</strong>
-                <span class="side-stat-detail">Rule-based technical read. For the ML signal, see the Strategies page.</span>
+                <span class="side-stat-detail">Rule-based read. For the ML signal see Strategies.</span>
             </div>
             <div class="side-stat">
-                <span class="side-stat-label" title="Whether all evaluation outputs for this asset are fully populated.">Data status</span>
+                <span class="side-stat-label" title="Whether the pipeline has full outputs for this asset.">Pipeline outputs</span>
                 <strong class="side-stat-value" id="market-signal-mode">n/a</strong>
-                <span class="side-stat-detail">Indicates whether the pipeline has produced complete outputs for this asset.</span>
+                <span class="side-stat-detail">Coverage state for this asset.</span>
             </div>
         </div>
     </article>
@@ -83,8 +82,8 @@
 <section class="market-context-section">
     <div class="section-heading">
         <div>
-            <h2>Extra context available</h2>
-            <p class="note">Other data layers LiveStrat has for this asset. These do not replace the main market view; they confirm or challenge it.</p>
+            <h2>Extra context</h2>
+            <p class="note">Other data layers for this asset. They confirm or challenge the main read.</p>
         </div>
     </div>
 
@@ -95,7 +94,7 @@
                 <p class="context-label">Futures positioning</p>
             </header>
             <p class="context-status" id="market-futures-support">Loading</p>
-            <p class="context-detail" id="market-futures-note">Funding rate, open interest, and crowding state.</p>
+            <p class="context-detail" id="market-futures-note">Funding, open interest, crowding.</p>
         </article>
 
         <article class="context-card" data-context="sentiment">
@@ -104,7 +103,7 @@
                 <p class="context-label">Sentiment source</p>
             </header>
             <p class="context-status" id="market-effective-sentiment">Loading</p>
-            <p class="context-detail" id="market-sentiment-note">Asset-specific news sentiment when available, otherwise broad market mood.</p>
+            <p class="context-detail" id="market-sentiment-note">Asset news when available, broad mood otherwise.</p>
         </article>
 
         <article class="context-card" data-context="news">
@@ -113,7 +112,7 @@
                 <p class="context-label">Asset news</p>
             </header>
             <p class="context-status" id="market-gdelt-status">Loading</p>
-            <p class="context-detail" id="market-news-note">GDELT article coverage for this asset over the recent window.</p>
+            <p class="context-detail" id="market-news-note">GDELT article coverage for this asset.</p>
         </article>
 
         <article class="context-card" data-context="onchain">
@@ -122,7 +121,7 @@
                 <p class="context-label">Network on-chain</p>
             </header>
             <p class="context-status" id="market-onchain-status">Loading</p>
-            <p class="context-detail" id="market-onchain-note">Wallet and network telemetry from Coin Metrics where coverage exists.</p>
+            <p class="context-detail" id="market-onchain-note">Coin Metrics network telemetry where available.</p>
         </article>
 
         <article class="context-card" data-context="defi">
@@ -131,7 +130,7 @@
                 <p class="context-label">Ecosystem TVL</p>
             </header>
             <p class="context-status" id="market-defi-status">Loading</p>
-            <p class="context-detail" id="market-defi-note">DeFiLlama chain-level TVL context for the mapped ecosystem.</p>
+            <p class="context-detail" id="market-defi-note">DeFiLlama chain TVL context.</p>
         </article>
     </div>
 
@@ -173,5 +172,5 @@
 {% block extra_js %}
 <script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
 <script src="{{ url_for('static', filename='css/js/signal_explainer.js') }}"></script>
-<script src="{{ url_for('static', filename='css/js/markets.js') }}"></script>
+<script src="{{ url_for('static', filename='css/js/markets.js') }}?v=4"></script>
 {% endblock %}

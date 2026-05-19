@@ -6,6 +6,14 @@
     justify-content: center;
 }
 
+.account-stat {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 8px 0 4px;
+    letter-spacing: -0.02em;
+}
+
 .account-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -50,6 +58,59 @@
     font-weight: 800;
     padding: 6px 10px;
     text-transform: capitalize;
+}
+
+.account-strategy-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-strategy-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.account-strategy-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.profile-use-btn,
+.profile-delete-btn {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.profile-use-btn {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.profile-use-btn:hover { background: var(--primary-strong); }
+
+.profile-delete-btn:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.profile-config-data {
+    display: none;
+}
+
+#account-action-status {
+    margin: 12px 0;
+    padding: 8px 12px;
+    background: var(--primary-soft);
+    border-radius: 8px;
 }
 
 .account-form-grid {

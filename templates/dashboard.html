@@ -7,19 +7,45 @@
 {% endblock %}
 
 {% block content %}
-<section class="dashboard-hero">
-    <div>
-        <p class="dashboard-kicker">Market overview</p>
-        <h2>Tracked assets and recent market movement</h2>
-        <p class="dashboard-subtitle">
-            Each card below shows the live price, 24-hour move, and the current LiveStrat signal. Click any card for the full evidence.
-        </p>
+<section class="dashboard-today-section">
+    <div class="section-heading">
+        <div>
+            <h2>Today's read</h2>
+            <p class="note">Across 7 tracked assets.</p>
+        </div>
     </div>
-    <a class="journey-card" href="{{ url_for('start_here') }}">
-        <span>New to LiveStrat?</span>
-        <strong>See how to use it</strong>
-        <small>A short walk through the dashboard, strategies, and evidence sections.</small>
-    </a>
+    <div class="dashboard-today-grid">
+        <article class="today-card today-card-signals">
+            <p class="today-label">Signals</p>
+            <div class="today-signal-tally" id="today-signal-tally">
+                <span class="tally-pill tally-buy"><strong id="today-buy-count">0</strong> Buy</span>
+                <span class="tally-pill tally-hold"><strong id="today-hold-count">0</strong> Hold</span>
+                <span class="tally-pill tally-avoid"><strong id="today-avoid-count">0</strong> Avoid</span>
+            </div>
+            <p class="today-note" id="today-signal-note">Across the basket.</p>
+        </article>
+
+        <article class="today-card">
+            <p class="today-label">24h leader</p>
+            <p class="today-value" id="today-leader-asset">n/a</p>
+            <p class="today-value-sub is-positive" id="today-leader-change">n/a</p>
+            <p class="today-note" id="today-leader-note">Biggest gainer in the last 24h.</p>
+        </article>
+
+        <article class="today-card">
+            <p class="today-label">Strongest signal</p>
+            <p class="today-value" id="today-conf-asset">n/a</p>
+            <p class="today-value-sub" id="today-conf-value">n/a</p>
+            <p class="today-note" id="today-conf-note">Highest model confidence right now.</p>
+        </article>
+
+        <article class="today-card">
+            <p class="today-label">Data freshness</p>
+            <p class="today-value" id="today-freshness-value">Checking…</p>
+            <p class="today-value-sub" id="today-freshness-window">n/a</p>
+            <p class="today-note" id="today-freshness-note">How recent the saved runs are.</p>
+        </article>
+    </div>
 </section>
 
 <section class="dashboard-asset-strip" id="dashboard-asset-strip">
@@ -64,52 +90,11 @@
     {% endfor %}
 </section>
 
-<section class="dashboard-today-section">
-    <div class="section-heading">
-        <div>
-            <h2>Today's market read</h2>
-            <p class="note">A quick summary of where the tracked basket stands right now.</p>
-        </div>
-    </div>
-    <div class="dashboard-today-grid">
-        <article class="today-card today-card-signals">
-            <p class="today-label">Signals across the basket</p>
-            <div class="today-signal-tally" id="today-signal-tally">
-                <span class="tally-pill tally-buy"><strong id="today-buy-count">0</strong> Buy</span>
-                <span class="tally-pill tally-hold"><strong id="today-hold-count">0</strong> Hold</span>
-                <span class="tally-pill tally-avoid"><strong id="today-avoid-count">0</strong> Avoid</span>
-            </div>
-            <p class="today-note" id="today-signal-note">Looking across the seven tracked assets.</p>
-        </article>
-
-        <article class="today-card">
-            <p class="today-label">24h leader</p>
-            <p class="today-value" id="today-leader-asset">n/a</p>
-            <p class="today-value-sub is-positive" id="today-leader-change">n/a</p>
-            <p class="today-note" id="today-leader-note">Biggest gainer across the tracked assets in the last 24 hours.</p>
-        </article>
-
-        <article class="today-card">
-            <p class="today-label">Strongest signal</p>
-            <p class="today-value" id="today-conf-asset">n/a</p>
-            <p class="today-value-sub" id="today-conf-value">n/a</p>
-            <p class="today-note" id="today-conf-note">Asset with the highest current model confidence behind its signal.</p>
-        </article>
-
-        <article class="today-card">
-            <p class="today-label">Data freshness</p>
-            <p class="today-value" id="today-freshness-value">Checking…</p>
-            <p class="today-value-sub" id="today-freshness-window">n/a</p>
-            <p class="today-note" id="today-freshness-note">How recent the saved evaluation runs are. Older windows reduce signal confidence.</p>
-        </article>
-    </div>
-</section>
-
 <section class="dashboard-featured-section">
     <div class="section-heading">
         <div>
             <h2>Featured asset</h2>
-            <p class="note">A closer look at the lead asset with current price action and LiveStrat's signal.</p>
+            <p class="note">A closer look. Pick another from the buttons.</p>
         </div>
         <div class="featured-asset-toggle" id="featured-asset-toggle"></div>
     </div>
@@ -164,7 +149,7 @@
     <div class="section-heading">
         <div>
             <h2>Data freshness</h2>
-            <p class="note">When the saved pipeline runs were last generated. Older runs automatically lower signal confidence.</p>
+            <p class="note">When the saved runs were generated.</p>
         </div>
         <span class="badge" id="dashboard-data-status-badge">Checking</span>
     </div>
@@ -172,18 +157,12 @@
         <article class="data-status-card">
             <p class="metric-label">Saved model run</p>
             <p class="data-status-value" id="dashboard-generated-window">Loading</p>
-            <p class="note" id="dashboard-generated-note">The latest generated pipeline window will appear here.</p>
-        </article>
-        <article class="data-status-card">
-            <p class="metric-label">Timeframe coverage</p>
-            <div class="refresh-lane-stack" id="dashboard-refresh-lanes">
-                <p class="note">Checking timeframe coverage...</p>
-            </div>
+            <p class="note" id="dashboard-generated-note">Latest pipeline window.</p>
         </article>
         <article class="data-status-card live-check-card">
             <p class="metric-label">Live price check</p>
             <p class="data-status-value" id="dashboard-live-price">Not checked</p>
-            <p class="note" id="dashboard-live-note">Fetch the latest Binance spot price without running the full model pipeline.</p>
+            <p class="note" id="dashboard-live-note">Latest Binance spot price without running the full pipeline.</p>
             <button type="button" id="dashboard-live-check">Check latest price</button>
         </article>
     </div>
@@ -195,5 +174,5 @@
 
 {% block extra_js %}
 <script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
-<script src="{{ url_for('static', filename='css/js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='css/js/dashboard.js') }}?v=2"></script>
 {% endblock %}

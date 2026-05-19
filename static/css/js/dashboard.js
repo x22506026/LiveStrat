@@ -46,34 +46,31 @@ function formatPriceUSD(value) {
     return `$${numeric.toFixed(4)}`;
 }
 
-function buildSparkPath(summary, width, height) {
-    const close = Number(summary.latest_close || 0);
-    if (close <= 0) return null;
-
-    const r4 = Number(summary.latest_return_4h_pct || 0) / 100;
-    const r24 = Number(summary.latest_return_24h_pct || 0) / 100;
-    const r3d = Number(summary.latest_return_3d_pct || 0) / 100;
-    const totalReturn = r3d || r24 || r4;
-
-    const steps = 60;
-    const pts = [];
-    for (let i = 0; i <= steps; i += 1) {
-        const t = i / steps;
-        const base = (1 - totalReturn) + totalReturn * t;
-        const wobble = Math.sin(t * Math.PI * 3) * Math.abs(totalReturn) * 0.18;
-        pts.push(base + wobble);
-    }
-    const min = Math.min(...pts);
-    const max = Math.max(...pts);
+function buildSparkPathFromPoints(points, width, height) {
+    if (!points || points.length < 2) return null;
+    const min = Math.min(...points);
+    const max = Math.max(...points);
     const range = Math.max(max - min, 0.0001);
-
-    const path = pts.map((p, i) => {
-        const x = (i / steps) * width;
+    const path = points.map((p, i) => {
+        const x = (i / (points.length - 1)) * width;
         const y = height - 4 - ((p - min) / range) * (height - 8);
         return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
     }).join(' ');
-
+    const totalReturn = (points[points.length - 1] - points[0]) / points[0];
     return { path, totalReturn, width, height };
+}
+
+async function fetchSparkPoints(symbol, timeframe = '4h', count = 60) {
+    try {
+        const response = await fetch(`/api/market-chart?asset=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&points=${count}`);
+        if (!response.ok) return [];
+        const payload = await response.json();
+        return (payload.points || [])
+            .map((p) => Number(p.close))
+            .filter((v) => Number.isFinite(v) && v > 0);
+    } catch (err) {
+        return [];
+    }
 }
 
 function renderSparkSvg(container, sparkData, options = {}) {
@@ -115,13 +112,15 @@ function renderSparkSvg(container, sparkData, options = {}) {
 
 /* ----- asset strip sparklines ----- */
 
-function renderAssetStripSparks() {
-    Object.entries(marketSummaries).forEach(([symbol, summary]) => {
+async function renderAssetStripSparks() {
+    const entries = Object.entries(marketSummaries);
+    await Promise.all(entries.map(async ([symbol]) => {
         const container = document.getElementById(`asset-chart-${symbol}`);
         if (!container) return;
-        const spark = buildSparkPath(summary, 200, 112);
+        const points = await fetchSparkPoints(symbol, '4h', 60);
+        const spark = buildSparkPathFromPoints(points, 200, 112);
         renderSparkSvg(container, spark, { emptyText: 'No recent price data' });
-    });
+    }));
 }
 
 /* ----- today's market read ----- */
@@ -256,8 +255,10 @@ function renderFeaturedAsset(asset) {
     }
 
     const chart = document.getElementById('featured-chart');
-    const spark = buildSparkPath(summary, 320, 160);
-    renderSparkSvg(chart, spark, { emptyText: 'No recent price data. run pipeline refresh.' });
+    fetchSparkPoints(asset, '4h', 60).then((points) => {
+        const spark = buildSparkPathFromPoints(points, 320, 160);
+        renderSparkSvg(chart, spark, { emptyText: 'No recent price data.' });
+    });
 
     // Read paragraph
     const readEl = document.getElementById('featured-read');

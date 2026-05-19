@@ -38,30 +38,30 @@
 <section class="methodology-section">
     <div class="section-heading">
         <div>
-            <h2>How the strategies are validated</h2>
-            <p class="note">The four pillars of LiveStrat's evaluation methodology.</p>
+            <h2>How strategies are validated</h2>
+            <p class="note">Four steps. Same standard for every strategy.</p>
         </div>
     </div>
     <div class="methodology-grid">
         <article class="method-card">
             <div class="method-icon">1</div>
-            <h3>Time-aware splits</h3>
-            <p>Data is split chronologically into four time-aware partitions: train, calibrate, validate, and test. No shuffling and no future leakage; every fold respects the arrow of time.</p>
+            <h3>Chronological splits</h3>
+            <p>Train, calibrate, validate, test. Time order respected. No future leakage.</p>
         </article>
         <article class="method-card">
             <div class="method-icon">2</div>
             <h3>Walk-forward folds</h3>
-            <p>The model is retrained on an expanding window as new candles arrive. Each fold's test set is data the model has never seen during training.</p>
+            <p>Model retrained on an expanding window. Each fold tests on data it never trained on.</p>
         </article>
         <article class="method-card">
             <div class="method-icon">3</div>
             <h3>Multiple metrics</h3>
-            <p>Strategies are scored on accuracy, balanced accuracy, macro-F1, Sharpe ratio, max drawdown, and excess return over buy-and-hold. Accuracy alone is misleading.</p>
+            <p>Accuracy, balanced accuracy, macro-F1, Sharpe, max drawdown, excess vs hold.</p>
         </article>
         <article class="method-card">
             <div class="method-icon">4</div>
-            <h3>Ablation study</h3>
-            <p>Each data source (futures, news, on-chain, TVL) is added in sequence to measure its individual contribution. The output is honest about which layers actually help and which do not.</p>
+            <h3>Ablation</h3>
+            <p>Data sources added one at a time to measure the actual contribution of each.</p>
         </article>
     </div>
 </section>
@@ -126,63 +126,132 @@
     </div>
 </section>
 
+<section class="significance-section">
+    <div class="section-heading">
+        <div>
+            <h2>Statistical significance</h2>
+            <p class="note">Per-asset significance tests on the 4h walk-forward strategy.</p>
+        </div>
+        <span class="badge" id="significance-window-badge">Loading</span>
+    </div>
+
+    <div class="significance-table-wrap">
+        <table class="significance-table">
+            <thead>
+                <tr>
+                    <th title="Tracked asset.">Asset</th>
+                    <th title="Number of bars in the strategy window.">Obs.</th>
+                    <th title="Average per-bar return minus buy and hold. Positive means the strategy earned more than holding per bar on average.">Mean diff per bar</th>
+                    <th title="Bootstrap p-value. Lower means stronger evidence the strategy differs from hold.">Bootstrap p</th>
+                    <th title="Diebold-Mariano test statistic comparing per-bar prediction errors.">DM stat</th>
+                    <th title="Diebold-Mariano p-value. Below 0.05 means a statistically meaningful difference vs hold.">DM p</th>
+                    <th title="Annualised Sharpe ratio. Return per unit of volatility, scaled to a year.">Sharpe (ann.)</th>
+                    <th title="Probabilistic Sharpe Ratio. Probability the true Sharpe is above zero.">PSR</th>
+                    <th title="Deflated Sharpe Ratio. PSR adjusted for the number of strategy variants tried.">DSR</th>
+                    <th title="Number of strategy variants used to deflate the Sharpe.">Trials</th>
+                </tr>
+            </thead>
+            <tbody id="significance-table-body">
+                <tr><td colspan="10">Loading significance summary...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="note" id="significance-caption"></p>
+
+    <div class="technical-glossary">
+        <h4>What these mean</h4>
+        <dl>
+            <dt>Mean diff per bar</dt><dd>Average return advantage over buy and hold, per bar.</dd>
+            <dt>Bootstrap p</dt><dd>Probability the observed advantage is due to chance. Lower is stronger.</dd>
+            <dt>DM stat / DM p</dt><dd>Diebold-Mariano test for differences in prediction error.</dd>
+            <dt>Sharpe (ann.)</dt><dd>Annualised return per unit of volatility.</dd>
+            <dt>PSR</dt><dd>Probabilistic Sharpe Ratio. Probability the true Sharpe is above zero.</dd>
+            <dt>DSR</dt><dd>Deflated Sharpe Ratio. PSR adjusted for the number of variants tried.</dd>
+            <dt>Trials</dt><dd>Number of strategy variants used to deflate the Sharpe.</dd>
+        </dl>
+    </div>
+</section>
+
+<section class="comparison-section">
+    <div class="section-heading">
+        <div>
+            <h2>Cross-asset comparison</h2>
+            <p class="note">How each asset ranks across the 4h walk-forward. Green leads, red lags.</p>
+        </div>
+        <span class="badge" id="comparison-window-badge">Loading</span>
+    </div>
+    <div class="comparison-table-wrap">
+        <table class="comparison-table" id="comparison-table">
+            <thead>
+                <tr id="comparison-table-head">
+                    <th>Asset</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-table-body">
+                <tr><td>Loading cross-asset metrics...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="note" id="comparison-caption"></p>
+</section>
+
 <section class="ablation-section">
     <div class="section-heading">
         <div>
-            <h2>Does each data source help?</h2>
-            <p class="note">Adding data sources one at a time to see which actually improves model performance. This is the academic core of the project.</p>
+            <h2>Data source contribution</h2>
+            <p class="note">Each layer added on top of the market baseline. Macro-F1 measures the change.</p>
         </div>
     </div>
 
     <div class="ablation-cards">
         <article class="ablation-card">
             <p class="ablation-rank">Baseline</p>
-            <h4>Market only</h4>
-            <p class="ablation-desc">Spot price, volume, volatility, taker flow.</p>
+            <h4>Market</h4>
+            <p class="ablation-desc">Price, volume, volatility, taker flow.</p>
         </article>
         <article class="ablation-card">
             <p class="ablation-rank">+1</p>
-            <h4>+ Futures structure</h4>
-            <p class="ablation-desc">Funding rate, open interest, long/short ratio, basis.</p>
+            <h4>+ Futures</h4>
+            <p class="ablation-desc">Funding, open interest, long/short ratio.</p>
         </article>
         <article class="ablation-card">
             <p class="ablation-rank">+2</p>
             <h4>+ Fear &amp; Greed</h4>
-            <p class="ablation-desc">Broad crypto mood baseline.</p>
+            <p class="ablation-desc">Broad crypto mood.</p>
         </article>
         <article class="ablation-card">
             <p class="ablation-rank">+3</p>
-            <h4>+ GDELT news</h4>
-            <p class="ablation-desc">Asset-specific news sentiment.</p>
+            <h4>+ News</h4>
+            <p class="ablation-desc">GDELT asset news sentiment.</p>
         </article>
         <article class="ablation-card">
             <p class="ablation-rank">+4</p>
             <h4>+ On-chain</h4>
-            <p class="ablation-desc">Network telemetry from Coin Metrics.</p>
+            <p class="ablation-desc">Coin Metrics network telemetry.</p>
         </article>
         <article class="ablation-card ablation-card-full">
             <p class="ablation-rank">Full</p>
-            <h4>Full multimodal</h4>
-            <p class="ablation-desc">All layers combined under one engine.</p>
+            <h4>All layers</h4>
+            <p class="ablation-desc">Combined under one engine.</p>
         </article>
     </div>
 
     <div class="ablation-evidence">
         <div class="metrics-grid">
             <div class="metric-box">
-                <p class="metric-label" title="The strongest context-aware variant identified by validation for this asset and timeframe.">Best variant</p>
+                <p class="metric-label" title="The strongest variant identified by validation.">Best variant</p>
                 <p class="metric-value analytics-metric-text" id="analytics-ablation-best-variant">Loading</p>
             </div>
             <div class="metric-box">
-                <p class="metric-label" title="Macro-F1 score of the best context-aware variant on held-out data.">Best macro-F1</p>
+                <p class="metric-label" title="Macro-F1 of the best variant on held-out data.">Best macro-F1</p>
                 <p class="metric-value" id="analytics-ablation-best-macro-f1">{{ "%.1f"|format((selected_summary.get('ablation_best_macro_f1', 0)|float) * 100) }}%</p>
             </div>
             <div class="metric-box">
-                <p class="metric-label" title="Macro-F1 of the market+futures backbone alone (the benchmark to beat).">Market + futures macro-F1</p>
+                <p class="metric-label" title="Macro-F1 of market plus futures alone (the benchmark).">Baseline macro-F1</p>
                 <p class="metric-value" id="analytics-ablation-base-macro-f1">{{ "%.1f"|format((selected_summary.get('ablation_market_futures_macro_f1', 0)|float) * 100) }}%</p>
             </div>
             <div class="metric-box">
-                <p class="metric-label" title="Macro-F1 improvement from adding context layers on top of market+futures. Positive = context helped.">Improvement</p>
+                <p class="metric-label" title="Macro-F1 gain from added layers. Positive means context helped.">Lift</p>
                 <p class="metric-value" id="analytics-ablation-delta">{{ "%.1f"|format((selected_summary.get('delta_macro_f1_vs_market_futures', 0)|float) * 100) }}%</p>
             </div>
         </div>
@@ -195,8 +264,8 @@
 <section class="recent-chart-section">
     <div class="section-heading">
         <div>
-            <h2>Recent market context</h2>
-            <p class="note">Recent price action for the selected asset. Background context only; strategy decisions are made on the Strategies tab.</p>
+            <h2>Recent price</h2>
+            <p class="note">Recent action for the selected asset. Strategy decisions live on the Strategies tab.</p>
         </div>
     </div>
     <div class="recent-chart-grid">
@@ -302,11 +371,11 @@
         </div>
         <div class="metric-box">
             <p class="metric-label" title="The active trading policy applied on top of model probabilities.">Policy</p>
-            <p class="metric-value analytics-metric-text" id="analytics-policy-name">{{ selected_summary.get('policy_name', 'n/a') }}</p>
+            <p class="metric-value analytics-metric-text" id="analytics-policy-name">{{ selected_summary.get('policy_name', 'n/a')|replace('_', ' ')|title }}</p>
         </div>
         <div class="metric-box">
             <p class="metric-label" title="Whether the model uses raw probabilities or temperature-scaled (calibrated) probabilities.">Probability mode</p>
-            <p class="metric-value analytics-metric-text" id="analytics-probability-mode">{{ selected_summary.get('probability_mode', 'n/a') }}</p>
+            <p class="metric-value analytics-metric-text" id="analytics-probability-mode">{{ selected_summary.get('probability_mode', 'n/a')|replace('_', ' ')|title }}</p>
         </div>
         <div class="metric-box">
             <p class="metric-label" title="Temperature parameter used to recalibrate model confidence.">Calibration temp</p>
@@ -314,7 +383,7 @@
         </div>
     </div>
     <p class="note" id="analytics-method-summary" style="margin-top: 14px;">
-        These additional fields describe the underlying engine, policy, and calibration settings.
+        Engine, policy, and calibration settings.
     </p>
 </details>
 
@@ -384,5 +453,5 @@
 {% block extra_js %}
 <script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
 <script src="{{ url_for('static', filename='css/js/signal_explainer.js') }}"></script>
-<script src="{{ url_for('static', filename='css/js/analytics.js') }}"></script>
+<script src="{{ url_for('static', filename='css/js/analytics.js') }}?v=7"></script>
 {% endblock %}

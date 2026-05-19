@@ -675,22 +675,11 @@ function renderAnalyticsPayload(payload) {
     }
 
     if (analyticsRefreshNote) {
-        const exactNote = payload.exact_timeframe_match
-            ? ''
-            : ` Exact ${formatTimeframe(payload.requested_timeframe)} analytics outputs are not available yet. Current decision analytics exist for ${(payload.available_timeframes || []).map(formatTimeframe).join(', ') || 'no timeframes'}.`;
-        analyticsRefreshNote.textContent = simplifyCopy(
-            `Requested timeframe: ${formatTimeframe(payload.requested_timeframe)}. ` +
-            `Resolved timeframe: ${formatTimeframe(payload.resolved_timeframe)}. ` +
-            `Analytics refreshed: ${formatTimestamp(payload.refreshed_at)}.` +
-            exactNote
-        );
+        analyticsRefreshNote.textContent = `${formatTimeframe(payload.resolved_timeframe)} window. Refreshed ${formatTimestamp(payload.refreshed_at)}.`;
     }
 
     if (analyticsSummary) {
-        analyticsSummary.textContent = simplifyCopy(
-            `${payload.asset.replace('USDT', ' / USDT')} uses ${engine.primary_model_display_name || payload.decision?.strategy_display_name || formatTitle(engine.primary_model || 'n/a')} on ${formatTimeframe(payload.resolved_timeframe)}. ` +
-            `Current signal: ${formatDecisionLabel(payload.decision?.current_signal || 'n/a')}. Headline accuracy: ${formatPercent(performance.accuracy)}.`
-        );
+        analyticsSummary.textContent = `${payload.asset.replace('USDT', ' / USDT')} on ${formatTimeframe(payload.resolved_timeframe)}. Signal: ${formatDecisionLabel(payload.decision?.current_signal || 'n/a')}. Accuracy: ${formatPercent(performance.accuracy)}.`;
     }
 
     if (analyticsActiveAsset) {
@@ -720,7 +709,7 @@ function renderAnalyticsPayload(payload) {
     }
 
     if (analyticsReadiness) {
-        analyticsReadiness.textContent = governance.readiness_label || 'n/a';
+        analyticsReadiness.textContent = simplifyCopy(governance.readiness_label || 'n/a');
     }
 
     if (analyticsEvaluationStrength) {
@@ -926,7 +915,11 @@ function renderAnalyticsPayload(payload) {
     }
 
     if (analyticsAblationDetail) {
-        analyticsAblationDetail.textContent = simplifyCopy(ablation.detail || 'Ablation summary not generated yet.');
+        const cleanedDetail = String(ablation.detail || 'Ablation summary not generated yet.')
+            .replace(/USDT/g, '')
+            .replace(/market futures plus/g, 'market + futures + ')
+            .replace(/fear greed/g, 'fear & greed');
+        analyticsAblationDetail.textContent = simplifyCopy(cleanedDetail);
     }
 
     if (analyticsAblationSummary) {
@@ -1146,6 +1139,143 @@ async function fetchJson(url) {
     return response.json();
 }
 
+function verdictPillClass(label) {
+    if (label === 'passes_dsr') return 'sig-pill sig-pill-pass';
+    if (label === 'insufficient_data') return 'sig-pill sig-pill-insufficient';
+    return 'sig-pill sig-pill-weak';
+}
+
+function statFixed(value, digits = 3) {
+    if (value === null || value === undefined || Number.isNaN(value)) return 'n/a';
+    return Number(value).toFixed(digits);
+}
+
+function statPct(value, digits = 2) {
+    if (value === null || value === undefined || Number.isNaN(value)) return 'n/a';
+    return (Number(value) * 100).toFixed(digits) + '%';
+}
+
+function metricCellFormat(key, value) {
+    if (value === null || value === undefined || Number.isNaN(value)) return 'n/a';
+    if (key === 'accuracy' || key === 'macro_f1' || key === 'excess_return') {
+        return (value * 100).toFixed(1) + '%';
+    }
+    return Number(value).toFixed(2);
+}
+
+function heatColor(normalized) {
+    // 0 = neutral grey, 1 = strong green
+    if (normalized <= 0) return 'rgba(220, 38, 38, 0.10)';
+    const clamped = Math.min(Math.max(normalized, 0), 1);
+    const alpha = (0.08 + clamped * 0.42).toFixed(3);
+    return `rgba(0, 139, 90, ${alpha})`;
+}
+
+function comparisonVerdictClass(label) {
+    if (label === 'passes_dsr') return 'comparison-verdict-pill sig-pill-pass';
+    if (label === 'insufficient_data') return 'comparison-verdict-pill sig-pill-insufficient';
+    return 'comparison-verdict-pill sig-pill-weak';
+}
+
+async function renderComparisonHeatmap(timeframe) {
+    const head = document.getElementById('comparison-table-head');
+    const body = document.getElementById('comparison-table-body');
+    const caption = document.getElementById('comparison-caption');
+    const badge = document.getElementById('comparison-window-badge');
+    if (!head || !body) return;
+    try {
+        const response = await fetch(`/api/cross-asset-metrics?timeframe=${encodeURIComponent(timeframe)}`);
+        if (!response.ok) throw new Error('request failed');
+        const payload = await response.json();
+        const defs = payload.metric_definitions || [];
+        const assets = payload.assets || [];
+        if (assets.length === 0) {
+            head.innerHTML = '<th>Asset</th>';
+            body.innerHTML = '<tr><td>No cross-asset metrics for this timeframe.</td></tr>';
+            if (badge) badge.textContent = 'No data';
+            if (caption) caption.textContent = 'No cross-asset comparison saved for this timeframe.';
+            return;
+        }
+
+        head.innerHTML = '<th>Asset</th>' +
+            defs.map((def) => `<th title="${def.hint}">${def.label}</th>`).join('') +
+            '<th title="Walk-forward retrain windows behind the figures.">Folds</th>';
+
+        // normalize each metric column independently
+        const columnRanges = {};
+        defs.forEach((def) => {
+            const values = assets.map((asset) => asset.metrics[def.key]).filter((v) => Number.isFinite(v));
+            columnRanges[def.key] = {
+                min: values.length ? Math.min(...values) : 0,
+                max: values.length ? Math.max(...values) : 0,
+            };
+        });
+
+        const rows = assets.map((asset) => {
+            const metricCells = defs.map((def) => {
+                const value = asset.metrics[def.key];
+                const range = columnRanges[def.key];
+                const span = (range.max - range.min) || 1;
+                const normalized = Number.isFinite(value) ? (value - range.min) / span : 0;
+                return `<td class="heat" style="background:${heatColor(normalized)}">${metricCellFormat(def.key, value)}</td>`;
+            }).join('');
+            return `<tr>
+                <td><strong>${asset.asset_short || asset.asset}</strong></td>
+                ${metricCells}
+                <td>${asset.fold_count || 0}</td>
+            </tr>`;
+        });
+        body.innerHTML = rows.join('');
+        if (badge) badge.textContent = `${payload.timeframe} window`;
+        if (caption) caption.textContent = '';
+    } catch (err) {
+        body.innerHTML = `<tr><td>Comparison error: ${err && err.message ? err.message : String(err)}</td></tr>`;
+        if (caption) caption.textContent = `Error: ${err && err.message ? err.message : String(err)}`;
+        console.error('renderComparisonHeatmap', err);
+    }
+}
+
+async function renderSignificanceTable(timeframe) {
+    const tbody = document.getElementById('significance-table-body');
+    const caption = document.getElementById('significance-caption');
+    const badge = document.getElementById('significance-window-badge');
+    if (!tbody) return;
+    try {
+        const response = await fetch(`/api/significance-summary?timeframe=${encodeURIComponent(timeframe)}`);
+        if (!response.ok) throw new Error('request failed');
+        const payload = await response.json();
+        if (!payload.available || !payload.rows || payload.rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11">No significance summary available for this timeframe.</td></tr>';
+            if (badge) badge.textContent = 'No data';
+            if (caption) caption.textContent = 'No significance summary saved for this timeframe.';
+            return;
+        }
+        if (badge) badge.textContent = `${payload.timeframe} window`;
+        const rows = payload.rows.map((row) => {
+            const diffClass = row.mean_difference > 0 ? 'is-positive' : (row.mean_difference < 0 ? 'is-negative' : '');
+            const dsrClass = row.deflated_sharpe_ratio > 0.95 ? 'is-strong' : (row.deflated_sharpe_ratio < 0 ? 'is-negative' : '');
+            return `<tr>
+                <td>${(row.asset || '').replace('USDT', '')}</td>
+                <td>${row.n_observations}</td>
+                <td class="${diffClass}">${statPct(row.mean_difference, 4)}</td>
+                <td>${statFixed(row.bootstrap_p_value)}</td>
+                <td>${statFixed(row.diebold_mariano_stat)}</td>
+                <td>${statFixed(row.diebold_mariano_p_value)}</td>
+                <td>${statFixed(row.annualised_sharpe, 2)}</td>
+                <td>${statFixed(row.probabilistic_sharpe_ratio, 3)}</td>
+                <td class="${dsrClass}">${statFixed(row.deflated_sharpe_ratio, 3)}</td>
+                <td>${row.n_trials_for_dsr}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = rows.join('');
+        if (caption) caption.textContent = `Sharpe deflated for ${payload.rows[0]?.n_trials_for_dsr || 'multiple'} trials.`;
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="11">Significance error: ${err && err.message ? err.message : String(err)}</td></tr>`;
+        if (caption) caption.textContent = `Error: ${err && err.message ? err.message : String(err)}`;
+        console.error('renderSignificanceTable', err);
+    }
+}
+
 async function renderAnalyticsLane() {
     const asset = analyticsAsset ? analyticsAsset.value : 'BTCUSDT';
     const timeframe = analyticsTimeframe ? analyticsTimeframe.value : '4h';
@@ -1155,6 +1285,10 @@ async function renderAnalyticsLane() {
         analyticsRun.disabled = true;
         analyticsRun.textContent = 'Refreshing...';
     }
+
+    // fire the two new sections in parallel so they don't sit behind the slow evaluation-evidence call
+    renderSignificanceTable(timeframe);
+    renderComparisonHeatmap(timeframe);
 
     try {
         const [payload, chartPayload, evidencePayload] = await Promise.all([

@@ -121,7 +121,7 @@ function clamp(value, min, max) {
 
 /* ----- hero card ----- */
 
-function renderHero(asset, summary, signal, confidence, refreshDays) {
+function renderHero(asset, summary, signal, confidence, refreshDays, timeframe) {
     setText('hero-symbol', asset.replace('USDT', ' / USDT'));
     setText('hero-asset-name', ASSET_NAMES[asset] || asset);
 
@@ -179,20 +179,20 @@ function renderHero(asset, summary, signal, confidence, refreshDays) {
             text = 'Refresh date unavailable.';
             dot.classList.add('freshness-dot-amber');
         } else if (refreshDays === 0) {
-            text = 'Data refreshed today. Signal is current.';
+            text = 'Refreshed today.';
             dot.classList.add('freshness-dot-green');
         } else if (refreshDays <= 2) {
-            text = `Data refreshed ${refreshDays} day${refreshDays === 1 ? '' : 's'} ago, signal is current.`;
+            text = `Refreshed ${refreshDays}d ago.`;
             dot.classList.add('freshness-dot-green');
         } else if (refreshDays <= 7) {
-            text = `Data refreshed ${refreshDays} days ago. Treat the signal with caution.`;
+            text = `Refreshed ${refreshDays}d ago. Treat with caution.`;
             dot.classList.add('freshness-dot-amber');
         } else {
-            text = `Data refreshed ${refreshDays} days ago. Signal is stale; refresh the pipeline.`;
+            text = `Refreshed ${refreshDays}d ago. Stale.`;
             dot.classList.add('freshness-dot-red');
         }
         const strategyLabel = STRATEGY_LABELS[strategySelect?.value] || 'Strategy';
-        const timeframeLabel = strategyTimeframe?.value === '1h' ? '1 hour view' : '4 hour view';
+        const timeframeLabel = strategyTimeframe?.value === '1h' ? '1h' : '4h';
         freshnessEl.innerHTML = '';
         freshnessEl.appendChild(dot);
         freshnessEl.append(` ${text} · ${strategyLabel} · ${timeframeLabel}`);
@@ -200,72 +200,71 @@ function renderHero(asset, summary, signal, confidence, refreshDays) {
 
     // Strategy note in verdict card
     const strategyLabel = STRATEGY_LABELS[strategySelect?.value] || 'Strategy';
-    setText('hero-strategy-note', `Signal produced by the ${strategyLabel} strategy.`);
+    setText('hero-strategy-note', `${strategyLabel} strategy.`);
 
-    // Sparkline
-    renderSparkline(summary);
+    // Sparkline (real recent price data)
+    renderSparkline(summary, asset, timeframe || '4h');
 }
 
-function renderSparkline(summary) {
+async function renderSparkline(summary, asset, timeframe) {
     const container = document.getElementById('hero-spark');
     if (!container) return;
     container.innerHTML = '';
+    container.style.alignItems = '';
+    container.style.justifyContent = '';
 
-    // We don't have an inline series, so render a synthetic line based on the
-    // latest_close, 4h, 24h, and 3d returns to show recent price direction.
-    const close = Number(summary.latest_close || 0);
-    if (close <= 0) {
+    let points = [];
+    try {
+        const response = await fetch(`/api/market-chart?asset=${encodeURIComponent(asset)}&timeframe=${encodeURIComponent(timeframe)}&points=60`);
+        if (response.ok) {
+            const payload = await response.json();
+            points = (payload.points || []).map((p) => Number(p.close)).filter((v) => Number.isFinite(v) && v > 0);
+        }
+    } catch (err) {
+        // fall through to empty state
+    }
+
+    if (points.length < 2) {
         const empty = document.createElement('p');
         empty.style.cssText = 'margin: auto; color: var(--text-muted); font-size: 0.9rem; font-style: italic;';
-        empty.textContent = 'No recent price data. Run a pipeline refresh.';
+        empty.textContent = 'No recent price data.';
         container.style.alignItems = 'center';
         container.style.justifyContent = 'center';
         container.appendChild(empty);
         return;
     }
 
-    const r4 = Number(summary.latest_return_4h_pct || 0) / 100;
-    const r24 = Number(summary.latest_return_24h_pct || 0) / 100;
-    const r3d = Number(summary.latest_return_3d_pct || 0) / 100;
-
-    // Synthesize a smooth path back from the current price
-    const pts = [];
-    const steps = 60;
-    const totalReturn = r3d || r24 || r4;
-    for (let i = 0; i <= steps; i += 1) {
-        const t = i / steps;
-        // ease price from (1 - totalReturn) at t=0 to 1.0 at t=1
-        const base = (1 - totalReturn) + totalReturn * t;
-        // gentle wobble
-        const wobble = Math.sin(t * Math.PI * 3) * Math.abs(totalReturn) * 0.18;
-        pts.push(base + wobble);
-    }
-    const min = Math.min(...pts);
-    const max = Math.max(...pts);
+    const min = Math.min(...points);
+    const max = Math.max(...points);
     const range = Math.max(max - min, 0.0001);
+    const width = 100;
+    const height = 30;
+    const padY = 2;
+
+    const path = points.map((value, idx) => {
+        const x = (idx / (points.length - 1)) * width;
+        const y = (height - padY) - ((value - min) / range) * (height - padY * 2);
+        return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    }).join(' ');
+
+    const totalReturn = (points[points.length - 1] - points[0]) / points[0];
+    const strokeColor = totalReturn >= 0 ? '#0d7c4e' : '#b84b4b';
+    const fillColor = totalReturn >= 0 ? 'rgba(0, 139, 90, 0.12)' : 'rgba(184, 75, 75, 0.10)';
 
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('viewBox', '0 0 100 30');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.setAttribute('preserveAspectRatio', 'none');
 
-    const pathPoints = pts.map((p, i) => {
-        const x = (i / steps) * 100;
-        const y = 28 - ((p - min) / range) * 26;
-        return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
-    }).join(' ');
-
-    const fillPath = `${pathPoints} L 100 30 L 0 30 Z`;
-
-    const fill = document.createElementNS(svgNS, 'path');
-    fill.setAttribute('d', fillPath);
-    fill.setAttribute('fill', 'rgba(0, 139, 90, 0.12)');
-    svg.appendChild(fill);
+    const fillPath = document.createElementNS(svgNS, 'path');
+    fillPath.setAttribute('d', `${path} L ${width} ${height} L 0 ${height} Z`);
+    fillPath.setAttribute('fill', fillColor);
+    svg.appendChild(fillPath);
 
     const stroke = document.createElementNS(svgNS, 'path');
-    stroke.setAttribute('d', pathPoints);
+    stroke.setAttribute('d', path);
     stroke.setAttribute('fill', 'none');
-    stroke.setAttribute('stroke', totalReturn >= 0 ? '#0d7c4e' : '#b84b4b');
+    stroke.setAttribute('stroke', strokeColor);
     stroke.setAttribute('stroke-width', '1.4');
     stroke.setAttribute('stroke-linecap', 'round');
     stroke.setAttribute('stroke-linejoin', 'round');
@@ -514,38 +513,38 @@ function renderTrackRecord(summary, asset) {
     }
     if (excessNote) {
         if (excess > 0.005) {
-            excessNote.textContent = 'Strategy outperformed simply holding the asset.';
+            excessNote.textContent = 'Beat a passive hold.';
         } else if (excess < -0.005) {
-            excessNote.textContent = 'Strategy currently underperforms simply holding the asset.';
+            excessNote.textContent = 'Underperformed a passive hold.';
         } else {
-            excessNote.textContent = 'Strategy roughly matches a passive hold.';
+            excessNote.textContent = 'Roughly matches a passive hold.';
         }
     }
 
-    // Honest read paragraph
+    // Short read paragraph
     const honesty = document.getElementById('track-honesty');
     if (honesty) {
         honesty.classList.remove('is-positive', 'is-warn', 'is-negative');
         const assetName = ASSET_NAMES[asset] || asset;
-        const evidenceBasis = useWalkForward
-            ? `Averaged across ${foldCount} walk-forward fold${foldCount === 1 ? '' : 's'} (retrained each fold)`
-            : 'On the latest single-window evaluation pass';
+        const basis = useWalkForward
+            ? `${foldCount}-fold walk-forward`
+            : 'Latest single-window';
         let message;
         let toneClass;
         if (accuracy <= 0) {
-            message = `Track record data for ${assetName} on this strategy and timeframe has not been generated yet. Refresh the pipeline to populate the evaluation results.`;
+            message = `${basis} data for ${assetName} not generated yet.`;
             toneClass = 'is-warn';
         } else if (excess > 0.02) {
-            message = `${evidenceBasis}, this strategy beat a simple buy-and-hold of ${assetName} by ${formatPercent(excess, true)}, with ${formatPercent(accuracy)} directional accuracy on unseen data.`;
+            message = `${basis}: beat hold of ${assetName} by ${formatPercent(excess, true)}. Direction calls ${formatPercent(accuracy)}.`;
             toneClass = 'is-positive';
         } else if (excess > 0) {
-            message = `${evidenceBasis}, this strategy outperformed a buy-and-hold of ${assetName} by a small margin (${formatPercent(excess, true)}). Directional accuracy was ${formatPercent(accuracy)}.`;
+            message = `${basis}: small edge of ${formatPercent(excess, true)} over hold of ${assetName}. Direction calls ${formatPercent(accuracy)}.`;
             toneClass = 'is-positive';
         } else if (excess > -0.02) {
-            message = `${evidenceBasis}, the strategy performed roughly in line with a buy-and-hold of ${assetName} (${formatPercent(excess, true)} difference). Directional accuracy ${formatPercent(accuracy)}.`;
+            message = `${basis}: roughly in line with hold of ${assetName} (${formatPercent(excess, true)}). Direction calls ${formatPercent(accuracy)}.`;
             toneClass = 'is-warn';
         } else {
-            message = `${evidenceBasis}, holding ${assetName} returned more than running the strategy. The model called direction correctly ${formatPercent(accuracy)} of the time but did not turn that into a return advantage of ${formatPercent(Math.abs(excess))}.`;
+            message = `${basis}: hold of ${assetName} returned more. Direction calls ${formatPercent(accuracy)}, but excess is ${formatPercent(excess, true)}.`;
             toneClass = 'is-negative';
         }
         honesty.classList.add(toneClass);
@@ -618,7 +617,7 @@ async function renderStrategyView() {
         // Silently fall back to the embedded market summary - the page still renders.
     }
 
-    renderHero(asset, summary, signal, confidence, refreshDays);
+    renderHero(asset, summary, signal, confidence, refreshDays, timeframe);
     readPriceTrend(summary);
     readActivity(summary);
     readFutures(summary);
@@ -626,7 +625,483 @@ async function renderStrategyView() {
     readOnchain(summary);
     renderTrackRecord(summary, asset);
     renderTechnicalDetails(summary);
+    renderBacktestViewer(asset, timeframe);
 }
+
+/* ----- Backtest viewer ----- */
+
+function setBacktestStat(id, valuePct, signed = true) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (valuePct === null || valuePct === undefined || Number.isNaN(valuePct)) {
+        el.textContent = 'n/a';
+        el.classList.remove('is-positive', 'is-negative');
+        return;
+    }
+    el.textContent = formatPercent(valuePct / 100, signed);
+    el.classList.toggle('is-positive', valuePct > 0);
+    el.classList.toggle('is-negative', valuePct < 0);
+}
+
+function drawEquityCurve(container, points) {
+    container.innerHTML = '';
+    if (!points || points.length < 2) return;
+
+    const width = 800;
+    const height = 240;
+    const padX = 40;
+    const padY = 20;
+
+    const strategyValues = points.map((p) => p.strategy_equity);
+    const holdValues = points.map((p) => p.buy_hold_equity);
+    const allValues = strategyValues.concat(holdValues);
+    const minVal = Math.min(...allValues);
+    const maxVal = Math.max(...allValues);
+    const range = maxVal - minVal || 1;
+
+    const xStep = (width - padX * 2) / (points.length - 1);
+
+    function buildPath(values) {
+        let d = '';
+        values.forEach((v, i) => {
+            const x = padX + i * xStep;
+            const y = height - padY - ((v - minVal) / range) * (height - padY * 2);
+            d += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2);
+        });
+        return d;
+    }
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    // baseline at 1.0 if it is inside the visible range
+    if (minVal <= 1 && maxVal >= 1) {
+        const yBase = height - padY - ((1 - minVal) / range) * (height - padY * 2);
+        const baseline = document.createElementNS(svgNS, 'line');
+        baseline.setAttribute('x1', padX);
+        baseline.setAttribute('x2', width - padX);
+        baseline.setAttribute('y1', yBase);
+        baseline.setAttribute('y2', yBase);
+        baseline.setAttribute('stroke', '#cdd8d3');
+        baseline.setAttribute('stroke-dasharray', '3,4');
+        baseline.setAttribute('stroke-width', '1');
+        svg.appendChild(baseline);
+    }
+
+    const holdPath = document.createElementNS(svgNS, 'path');
+    holdPath.setAttribute('d', buildPath(holdValues));
+    holdPath.setAttribute('fill', 'none');
+    holdPath.setAttribute('stroke', '#274c77');
+    holdPath.setAttribute('stroke-width', '1.6');
+    holdPath.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(holdPath);
+
+    const stratPath = document.createElementNS(svgNS, 'path');
+    stratPath.setAttribute('d', buildPath(strategyValues));
+    stratPath.setAttribute('fill', 'none');
+    stratPath.setAttribute('stroke', '#008b5a');
+    stratPath.setAttribute('stroke-width', '2.1');
+    stratPath.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(stratPath);
+
+    container.appendChild(svg);
+}
+
+function renderFoldRows(folds) {
+    const tbody = document.getElementById('backtest-folds-body');
+    if (!tbody) return;
+    if (!folds || folds.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9">No folds available for this asset and timeframe.</td></tr>';
+        return;
+    }
+    const rows = folds.map((fold) => {
+        const window = (fold.test_start || '').slice(0, 10) + ' to ' + (fold.test_end || '').slice(0, 10);
+        const excessClass = fold.excess_return > 0 ? 'is-positive' : (fold.excess_return < 0 ? 'is-negative' : '');
+        const stratClass = fold.strategy_return > 0 ? 'is-positive' : (fold.strategy_return < 0 ? 'is-negative' : '');
+        return `<tr>
+            <td>${fold.fold_number}</td>
+            <td>${window}</td>
+            <td>${(fold.accuracy * 100).toFixed(1)}%</td>
+            <td>${(fold.macro_f1 * 100).toFixed(1)}%</td>
+            <td class="${stratClass}">${(fold.strategy_return * 100).toFixed(2)}%</td>
+            <td>${(fold.buy_hold_return * 100).toFixed(2)}%</td>
+            <td class="${excessClass}">${(fold.excess_return * 100).toFixed(2)}%</td>
+            <td>${Number.isFinite(fold.sharpe) ? fold.sharpe.toFixed(2) : 'n/a'}</td>
+            <td>${fold.trade_count}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = rows.join('');
+}
+
+async function renderBacktestViewer(asset, timeframe) {
+    const chartHost = document.getElementById('backtest-equity-chart');
+    const caption = document.getElementById('backtest-chart-caption');
+    const exportLink = document.getElementById('backtest-folds-export');
+    if (exportLink) {
+        exportLink.href = `/api/backtest-curve?asset=${encodeURIComponent(asset)}&timeframe=${encodeURIComponent(timeframe)}`;
+    }
+    try {
+        const response = await fetch(
+            `/api/backtest-curve?asset=${encodeURIComponent(asset)}&timeframe=${encodeURIComponent(timeframe)}`
+        );
+        if (!response.ok) throw new Error('request failed');
+        const payload = await response.json();
+        const curve = payload.curve || {};
+        const folds = payload.folds || {};
+
+        if (curve.available) {
+            setBacktestStat('backtest-strategy-return', curve.strategy_total_return_pct);
+            setBacktestStat('backtest-buy-hold-return', curve.buy_hold_total_return_pct);
+            setBacktestStat('backtest-excess-return', curve.excess_return_pct);
+            setBacktestStat('backtest-max-drawdown', curve.max_drawdown_pct, false);
+            drawEquityCurve(chartHost, curve.points || []);
+            const start = (curve.window?.start || '').slice(0, 10);
+            const end = (curve.window?.end || '').slice(0, 10);
+            const badge = document.getElementById('backtest-window-badge');
+            if (badge) badge.textContent = start && end ? `${start} to ${end}` : 'Window';
+            if (caption) caption.textContent = `${curve.point_count} bars on the ${timeframe} timeframe.`;
+        } else {
+            setBacktestStat('backtest-strategy-return', null);
+            setBacktestStat('backtest-buy-hold-return', null);
+            setBacktestStat('backtest-excess-return', null);
+            setBacktestStat('backtest-max-drawdown', null, false);
+            if (chartHost) chartHost.innerHTML = '';
+            if (caption) caption.textContent = 'No backtest curve saved for this asset and timeframe.';
+            const badge = document.getElementById('backtest-window-badge');
+            if (badge) badge.textContent = 'No data';
+        }
+
+        const foldCountEl = document.getElementById('backtest-fold-count');
+        if (foldCountEl) foldCountEl.textContent = folds.fold_count || 0;
+        renderFoldRows(folds.folds || []);
+    } catch (err) {
+        if (caption) caption.textContent = 'Could not load backtest data.';
+    }
+}
+
+/* ----- Strategy builder ----- */
+
+const strategyRegistryScript = document.getElementById('strategy-registry-data');
+const strategyRegistry = strategyRegistryScript ? JSON.parse(strategyRegistryScript.textContent) : {};
+let builderResolvedConfig = null;
+let builderResolvedAsset = null;
+
+const SINGLE_SELECT_SECTIONS = new Set(['core_signal', 'timeframe_scope', 'decision_rules', 'risk_profile']);
+const MULTI_SELECT_SECTIONS = new Set(['data_sources', 'confirmation_filters']);
+
+function getBuilderDefaults() {
+    const def = strategyRegistry?.default_custom_selection || {};
+    return {
+        core_signal: def.core_signal || 'trend_following',
+        timeframe_scope: (def.timeframes && def.timeframes[0]) || '4h',
+        data_sources: def.data_sources || ['market'],
+        confirmation_filters: def.confirmation_filters || [],
+        decision_rules: def.decision_rules || 'double_confirmation',
+        risk_profile: def.risk_profile || 'balanced_risk',
+    };
+}
+
+function renderBuilderForm() {
+    const host = document.getElementById('builder-questions');
+    if (!host) return;
+    const sections = strategyRegistry?.custom_builder?.sections || [];
+    if (sections.length === 0) {
+        host.innerHTML = '<p class="note">Builder schema is not available.</p>';
+        return;
+    }
+    const defaults = getBuilderDefaults();
+    const blocks = sections.map((section) => {
+        const isMulti = MULTI_SELECT_SECTIONS.has(section.id);
+        const inputType = isMulti ? 'checkbox' : 'radio';
+        const currentValue = defaults[section.id];
+        const options = section.options.map((opt) => {
+            let checked = false;
+            if (isMulti) checked = Array.isArray(currentValue) && currentValue.includes(opt.id);
+            else checked = currentValue === opt.id;
+            return `<label class="builder-option ${checked ? 'is-selected' : ''}" data-section="${section.id}" data-value="${opt.id}">
+                <input type="${inputType}" name="builder-${section.id}" value="${opt.id}" ${checked ? 'checked' : ''}>
+                <span>
+                    <span class="builder-option-label">${opt.label}</span>
+                    <span class="builder-option-desc">${opt.description || ''}</span>
+                </span>
+            </label>`;
+        }).join('');
+        return `<div class="builder-question" data-section="${section.id}">
+            <h4>${section.label}</h4>
+            <p class="builder-question-desc">${section.description || ''}</p>
+            <div class="builder-options">${options}</div>
+        </div>`;
+    });
+    host.innerHTML = blocks.join('');
+
+    host.querySelectorAll('.builder-option input').forEach((input) => {
+        input.addEventListener('change', () => {
+            const wrap = input.closest('.builder-question');
+            if (!wrap) return;
+            wrap.querySelectorAll('.builder-option').forEach((opt) => {
+                const opInput = opt.querySelector('input');
+                opt.classList.toggle('is-selected', !!opInput && opInput.checked);
+            });
+        });
+    });
+}
+
+function readBuilderSelection() {
+    const selection = {
+        data_sources: [],
+        confirmation_filters: [],
+    };
+    document.querySelectorAll('.builder-option input').forEach((input) => {
+        if (!input.checked) return;
+        const wrap = input.closest('.builder-question');
+        if (!wrap) return;
+        const sectionId = wrap.dataset.section;
+        if (MULTI_SELECT_SECTIONS.has(sectionId)) {
+            if (!selection[sectionId]) selection[sectionId] = [];
+            selection[sectionId].push(input.value);
+        } else if (SINGLE_SELECT_SECTIONS.has(sectionId)) {
+            selection[sectionId] = input.value;
+        }
+    });
+    if (!selection.data_sources.includes('market')) selection.data_sources.unshift('market');
+    return selection;
+}
+
+function pickTimeframeForApi(timeframeScope) {
+    if (timeframeScope === '1h_4h_stack' || timeframeScope === '4h_1d_stack') return '4h';
+    if (['1h', '4h', '1d'].includes(timeframeScope)) return timeframeScope;
+    return '4h';
+}
+
+function joinLayers(layers) {
+    if (!layers || layers.length === 0) return 'none';
+    return layers.map((layer) => String(layer).replace(/_/g, ' ')).join(', ');
+}
+
+function renderBuilderPreview(config) {
+    if (!config) return;
+    const required = config.required_layers || [];
+    const optional = config.optional_layers || [];
+    const unavailable = config.unavailable_layers || [];
+    const governance = config.governance || {};
+    const timeframePolicy = config.timeframe_policy || {};
+
+    document.getElementById('builder-summary').textContent = config.display_summary || 'Custom strategy';
+    document.getElementById('builder-evaluation-note').textContent = config.evaluation_basis_note || 'Evaluation basis will appear here.';
+    document.getElementById('builder-required-layers').textContent = joinLayers(required);
+    document.getElementById('builder-optional-layers').textContent = joinLayers(optional);
+    document.getElementById('builder-unavailable-layers').textContent = joinLayers(unavailable);
+    document.getElementById('builder-sentiment-role').textContent = (config.sentiment_role || 'n/a').replace(/_/g, ' ');
+    document.getElementById('builder-onchain-role').textContent = (config.onchain_role || 'n/a').replace(/_/g, ' ');
+    document.getElementById('builder-timeframe').textContent = timeframePolicy.resolved_timeframe || 'n/a';
+    document.getElementById('builder-readiness').textContent = governance.readiness_label || 'Resolved';
+
+    document.getElementById('builder-save').disabled = false;
+}
+
+async function previewBuilder() {
+    const asset = document.getElementById('builder-asset')?.value || 'BTCUSDT';
+    const selection = readBuilderSelection();
+    const timeframe = pickTimeframeForApi(selection.timeframe_scope);
+    try {
+        const response = await fetch('/api/strategy-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'custom', asset, timeframe, selection }),
+        });
+        if (!response.ok) throw new Error('preview failed');
+        const config = await response.json();
+        builderResolvedConfig = config;
+        builderResolvedAsset = asset;
+        renderBuilderPreview(config);
+    } catch (err) {
+        const status = document.getElementById('builder-save-status');
+        if (status) status.textContent = 'Could not generate preview.';
+    }
+}
+
+function resetBuilder() {
+    renderBuilderForm();
+    builderResolvedConfig = null;
+    builderResolvedAsset = null;
+    document.getElementById('builder-save').disabled = true;
+    document.getElementById('builder-summary').textContent = 'Pick options and press Preview.';
+    document.getElementById('builder-evaluation-note').textContent = 'Evaluation basis will appear here.';
+    ['required', 'optional', 'unavailable', 'sentiment-role', 'onchain-role', 'timeframe'].forEach((suffix) => {
+        const id = suffix.includes('-') ? `builder-${suffix}` : `builder-${suffix}-layers`;
+        const el = document.getElementById(id);
+        if (el) el.textContent = 'n/a';
+    });
+    document.getElementById('builder-readiness').textContent = 'Pending';
+    document.getElementById('builder-save-status').textContent = '';
+    document.getElementById('builder-name').value = '';
+}
+
+async function saveBuilderProfile() {
+    if (!builderResolvedConfig) return;
+    const name = document.getElementById('builder-name')?.value?.trim() || 'Custom strategy';
+    const asset = builderResolvedAsset || 'BTCUSDT';
+    const status = document.getElementById('builder-save-status');
+    try {
+        const response = await fetch('/api/strategy-profiles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, asset, tag: 'custom', config: builderResolvedConfig }),
+        });
+        if (!response.ok) throw new Error('save failed');
+        const out = await response.json();
+        if (status) status.textContent = `Saved as "${out.profile?.name || name}". Open Account to view it.`;
+    } catch (err) {
+        if (status) status.textContent = 'Could not save profile.';
+    }
+}
+
+function applyBuilderSelection(selection) {
+    if (!selection) return;
+    document.querySelectorAll('.builder-question').forEach((wrap) => {
+        const sectionId = wrap.dataset.section;
+        const value = selection[sectionId];
+        wrap.querySelectorAll('.builder-option').forEach((opt) => {
+            const input = opt.querySelector('input');
+            if (!input) return;
+            let shouldCheck = false;
+            if (MULTI_SELECT_SECTIONS.has(sectionId)) {
+                shouldCheck = Array.isArray(value) && value.includes(input.value);
+            } else if (SINGLE_SELECT_SECTIONS.has(sectionId)) {
+                shouldCheck = value === input.value;
+            }
+            input.checked = shouldCheck;
+            opt.classList.toggle('is-selected', shouldCheck);
+        });
+    });
+}
+
+function hydrateBuilderFromStorage() {
+    const PROFILE_KEY = 'livestrat:loadProfile';
+    let payload = null;
+    try {
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (!raw) return;
+        payload = JSON.parse(raw);
+    } catch (err) {
+        return;
+    }
+    localStorage.removeItem(PROFILE_KEY);
+    if (!payload) return;
+
+    const builderAsset = document.getElementById('builder-asset');
+    if (builderAsset && payload.asset) {
+        if ([...builderAsset.options].some((opt) => opt.value === payload.asset)) {
+            builderAsset.value = payload.asset;
+        }
+    }
+    applyBuilderSelection(payload.selection);
+
+    const nameField = document.getElementById('builder-name');
+    if (nameField && payload.name) nameField.value = payload.name;
+
+    document.getElementById('builder-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    previewBuilder();
+}
+
+function deriveTimeframeScope(selection) {
+    const timeframes = selection?.timeframes || [];
+    if (selection?.timeframe_scope) return selection.timeframe_scope;
+    if (timeframes.includes('1h') && timeframes.includes('4h')) return '1h_4h_stack';
+    if (timeframes.includes('4h') && timeframes.includes('1d')) return '4h_1d_stack';
+    return timeframes[0] || '4h';
+}
+
+function loadProfileIntoBuilder(profile) {
+    if (!profile) return;
+    const config = profile.config || {};
+    const selection = config.selection || {};
+    const builderSelection = {
+        core_signal: selection.core_signal || 'trend_following',
+        timeframe_scope: deriveTimeframeScope(selection),
+        data_sources: selection.data_sources || ['market'],
+        confirmation_filters: selection.confirmation_filters || [],
+        decision_rules: selection.decision_rules || 'double_confirmation',
+        risk_profile: selection.risk_profile || 'balanced_risk',
+    };
+    const builderAsset = document.getElementById('builder-asset');
+    if (builderAsset && profile.asset) {
+        if ([...builderAsset.options].some((opt) => opt.value === profile.asset)) {
+            builderAsset.value = profile.asset;
+        }
+    }
+    applyBuilderSelection(builderSelection);
+    const nameField = document.getElementById('builder-name');
+    if (nameField && profile.name) nameField.value = profile.name;
+    document.getElementById('builder-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    previewBuilder();
+}
+
+async function deleteProfileFromBuilder(profileId) {
+    if (!profileId) return;
+    const confirmed = window.confirm('Delete this saved profile?');
+    if (!confirmed) return;
+    try {
+        const response = await fetch(`/api/strategy-profiles/${profileId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('delete failed');
+        await refreshBuilderProfiles();
+    } catch (err) {
+        const status = document.getElementById('builder-save-status');
+        if (status) status.textContent = 'Could not delete profile.';
+    }
+}
+
+function renderProfileChips(profiles) {
+    const host = document.getElementById('builder-profiles-list');
+    if (!host) return;
+    if (!profiles || profiles.length === 0) {
+        host.innerHTML = '<p class="note">No saved profiles yet. Use Save below to keep one for later.</p>';
+        return;
+    }
+    host.innerHTML = '';
+    profiles.forEach((profile) => {
+        const chip = document.createElement('div');
+        chip.className = 'builder-profile-chip';
+        chip.dataset.profileId = profile.id;
+        const tfPolicy = profile.config?.timeframe_policy || {};
+        const tf = tfPolicy.resolved_timeframe || (profile.selected_timeframes || []).join('+') || '4h';
+        chip.innerHTML = `
+            <span class="chip-name">${profile.name}</span>
+            <span class="chip-meta">${(profile.asset || '').replace('USDT', '')} / ${tf}</span>
+            <button type="button" class="chip-load">Load</button>
+            <button type="button" class="chip-delete" aria-label="Delete">&times;</button>
+        `;
+        chip.querySelector('.chip-load').addEventListener('click', () => loadProfileIntoBuilder(profile));
+        chip.querySelector('.chip-delete').addEventListener('click', () => deleteProfileFromBuilder(profile.id));
+        host.appendChild(chip);
+    });
+}
+
+async function refreshBuilderProfiles() {
+    const host = document.getElementById('builder-profiles-list');
+    if (!host) return;
+    try {
+        const response = await fetch('/api/strategy-profiles');
+        if (!response.ok) throw new Error('list failed');
+        const payload = await response.json();
+        renderProfileChips(payload.profiles || []);
+    } catch (err) {
+        host.innerHTML = '<p class="note">Could not load saved profiles.</p>';
+    }
+}
+
+renderBuilderForm();
+hydrateBuilderFromStorage();
+refreshBuilderProfiles();
+document.getElementById('builder-preview')?.addEventListener('click', previewBuilder);
+document.getElementById('builder-reset')?.addEventListener('click', resetBuilder);
+document.getElementById('builder-save')?.addEventListener('click', async () => {
+    await saveBuilderProfile();
+    refreshBuilderProfiles();
+});
+document.getElementById('builder-profiles-refresh')?.addEventListener('click', refreshBuilderProfiles);
 
 /* ----- event handlers ----- */
 

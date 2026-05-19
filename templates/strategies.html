@@ -10,7 +10,7 @@
 <section class="strategies-toolbar">
     <div class="toolbar-copy">
         <p class="toolbar-kicker">Strategy view</p>
-        <h2>One signal, with the evidence behind it.</h2>
+        <h2>Pick a strategy. See the evidence.</h2>
     </div>
     <div class="toolbar-controls">
         <div class="toolbar-field">
@@ -85,8 +85,8 @@
 <section class="evidence-section">
     <div class="section-heading">
         <div>
-            <h2>Why this signal?</h2>
-            <p class="note">The signal is built from five evidence layers. Each is shown as a simple read.</p>
+            <h2>Why this signal</h2>
+            <p class="note">Five evidence layers.</p>
         </div>
     </div>
 
@@ -142,7 +142,7 @@
     <div class="section-heading">
         <div>
             <h2>Track record</h2>
-            <p class="note">How this strategy has performed on held-out data using walk-forward validation. The model is never shown future bars during training.</p>
+            <p class="note">Held-out performance using walk-forward validation.</p>
         </div>
     </div>
 
@@ -150,26 +150,26 @@
         <article class="track-stat-card">
             <p class="track-stat-label">Accuracy on unseen data</p>
             <p class="track-stat-value" id="track-accuracy">n/a</p>
-            <p class="track-stat-note">Share of correct directional calls on held-out test candles.</p>
+            <p class="track-stat-note">Correct direction calls on held-out candles.</p>
             <div class="track-stat-bar"><span id="track-accuracy-fill"></span></div>
         </article>
 
         <article class="track-stat-card">
             <p class="track-stat-label">Strategy return</p>
             <p class="track-stat-value" id="track-strategy-return">n/a</p>
-            <p class="track-stat-note">Total return from following the strategy signal (with trading costs).</p>
+            <p class="track-stat-note">After trading costs.</p>
         </article>
 
         <article class="track-stat-card">
             <p class="track-stat-label">Buy &amp; hold return</p>
             <p class="track-stat-value" id="track-buy-hold">n/a</p>
-            <p class="track-stat-note">Total return from simply holding the coin over the same window.</p>
+            <p class="track-stat-note">Same window, passive hold.</p>
         </article>
 
         <article class="track-stat-card">
             <p class="track-stat-label">Strategy minus hold</p>
             <p class="track-stat-value" id="track-excess">n/a</p>
-            <p class="track-stat-note" id="track-excess-note">Difference is the strategy's edge versus a passive hold.</p>
+            <p class="track-stat-note" id="track-excess-note">Edge over a passive hold.</p>
         </article>
     </div>
 
@@ -178,11 +178,83 @@
     </div>
 </section>
 
+<section class="backtest-viewer-section">
+    <div class="section-heading">
+        <div>
+            <h2>Backtest viewer</h2>
+            <p class="note">Equity curve and per-fold table from the walk-forward run.</p>
+        </div>
+        <span class="badge" id="backtest-window-badge">Loading window</span>
+    </div>
+
+    <div class="backtest-stats-grid">
+        <div class="backtest-stat">
+            <p class="metric-label" title="Total return from following the strategy over the window.">Strategy return</p>
+            <p class="backtest-stat-value" id="backtest-strategy-return">n/a</p>
+        </div>
+        <div class="backtest-stat">
+            <p class="metric-label" title="Total return from a passive hold over the same window.">Buy &amp; hold return</p>
+            <p class="backtest-stat-value" id="backtest-buy-hold-return">n/a</p>
+        </div>
+        <div class="backtest-stat">
+            <p class="metric-label" title="Strategy return minus buy and hold return.">Excess vs hold</p>
+            <p class="backtest-stat-value" id="backtest-excess-return">n/a</p>
+        </div>
+        <div class="backtest-stat">
+            <p class="metric-label" title="Worst peak-to-trough loss in the window.">Max drawdown</p>
+            <p class="backtest-stat-value" id="backtest-max-drawdown">n/a</p>
+        </div>
+        <div class="backtest-stat">
+            <p class="metric-label" title="Number of walk-forward retrain windows.">Fold count</p>
+            <p class="backtest-stat-value" id="backtest-fold-count">n/a</p>
+        </div>
+    </div>
+
+    <article class="backtest-chart-card">
+        <div class="backtest-chart-legend">
+            <span class="legend-swatch legend-strategy"></span> Strategy
+            <span class="legend-swatch legend-hold"></span> Buy &amp; hold
+        </div>
+        <div class="backtest-chart" id="backtest-equity-chart" aria-label="Strategy equity curve"></div>
+        <p class="note" id="backtest-chart-caption">Loading equity curve for the selected asset.</p>
+    </article>
+
+    <article class="backtest-folds-card">
+        <div class="section-heading">
+            <div>
+                <h3>Walk-forward folds</h3>
+                <p class="note">Each row is one fold. Model trained on data before the test window only.</p>
+            </div>
+            <a class="toolbar-action toolbar-action-secondary" id="backtest-folds-export" href="#">Export CSV</a>
+        </div>
+        <div class="backtest-folds-table-wrap">
+            <table class="backtest-folds-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Test window</th>
+                        <th>Accuracy</th>
+                        <th>Macro-F1</th>
+                        <th>Strategy</th>
+                        <th>Hold</th>
+                        <th>Excess</th>
+                        <th>Sharpe</th>
+                        <th>Trades</th>
+                    </tr>
+                </thead>
+                <tbody id="backtest-folds-body">
+                    <tr><td colspan="9">Loading folds...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+
 <section class="other-strategies-section">
     <div class="section-heading">
         <div>
             <h2>Try a different strategy</h2>
-            <p class="note">Each strategy answers the same question with different logic. Try switching to compare.</p>
+            <p class="note">Switch to compare.</p>
         </div>
     </div>
 
@@ -191,9 +263,9 @@
             <p class="strategy-card-tag">Market + futures</p>
             <h3>Balanced Default</h3>
             <p class="strategy-card-desc">
-                The current LiveStrat backbone. Combines spot market features with futures positioning and applies a confidence-gated long/flat policy.
+                Market features with futures positioning. Confidence-gated long/flat.
             </p>
-            <p class="strategy-card-fit">Best for general-purpose use across the seven tracked coins.</p>
+            <p class="strategy-card-fit">General-purpose across all seven coins.</p>
             <button type="button" class="strategy-card-action" data-strategy-action="recommended">Use this strategy</button>
         </article>
 
@@ -201,9 +273,9 @@
             <p class="strategy-card-tag">Trend following</p>
             <h3>Trend Confirmation</h3>
             <p class="strategy-card-desc">
-                Requires stronger trend confirmation and uses volume / volatility filters before signalling. Slower and more conservative than the default.
+                Stronger trend confirmation. Volume and volatility filters. Slower.
             </p>
-            <p class="strategy-card-fit">Best when you prefer fewer but higher-conviction entries.</p>
+            <p class="strategy-card-fit">Fewer but higher-conviction entries.</p>
             <button type="button" class="strategy-card-action" data-strategy-action="conservative_trend">Use this strategy</button>
         </article>
 
@@ -211,9 +283,9 @@
             <p class="strategy-card-tag">Short horizon</p>
             <h3>Momentum Breakout</h3>
             <p class="strategy-card-desc">
-                Tuned for short-horizon breakouts. Watches participation strength, taker flow, and trade activity to identify continuation moves.
+                Tuned for short-horizon breakouts. Watches participation and taker flow.
             </p>
-            <p class="strategy-card-fit">Best for active 1h / 4h trading windows.</p>
+            <p class="strategy-card-fit">Active 1h / 4h windows.</p>
             <button type="button" class="strategy-card-action" data-strategy-action="momentum_breakout">Use this strategy</button>
         </article>
 
@@ -221,9 +293,9 @@
             <p class="strategy-card-tag">Contrarian</p>
             <h3>Crowd Reversal</h3>
             <p class="strategy-card-desc">
-                Fades crowded futures positioning. When funding and long/short ratios show one-sided crowding, this strategy looks for reversal entries.
+                Fades crowded futures positioning. Looks for reversal entries.
             </p>
-            <p class="strategy-card-fit">Best in choppy markets or after extended one-way moves.</p>
+            <p class="strategy-card-fit">Choppy markets or after one-way moves.</p>
             <button type="button" class="strategy-card-action" data-strategy-action="futures_crowd_reversal">Use this strategy</button>
         </article>
 
@@ -231,10 +303,91 @@
             <p class="strategy-card-tag">Transparent rules</p>
             <h3>Rule Benchmark</h3>
             <p class="strategy-card-desc">
-                A transparent rule-based strategy with no machine learning. Uses moving averages, volatility, and participation thresholds.
+                Transparent rule-based. Moving averages, volatility, participation.
             </p>
-            <p class="strategy-card-fit">Best as a benchmark to compare ML strategies against.</p>
+            <p class="strategy-card-fit">Benchmark to compare ML strategies against.</p>
             <button type="button" class="strategy-card-action" data-strategy-action="rule_based">Use this strategy</button>
+        </article>
+    </div>
+</section>
+
+<section class="builder-section" id="builder-section">
+    <div class="section-heading">
+        <div>
+            <h2>Build your own strategy</h2>
+            <p class="note">Pick a signal style and the layers you want. Preview shows what resolves for the selected asset.</p>
+        </div>
+    </div>
+
+    <div class="builder-profiles-strip" id="builder-profiles-strip">
+        <div class="builder-profiles-head">
+            <p class="metric-label">Your saved profiles</p>
+            <button type="button" id="builder-profiles-refresh" class="button-secondary">Refresh</button>
+        </div>
+        <div class="builder-profiles-list" id="builder-profiles-list">
+            <p class="note">Loading saved profiles...</p>
+        </div>
+    </div>
+
+    <div class="builder-grid">
+        <form class="builder-form" id="builder-form">
+            <div class="builder-row">
+                <label for="builder-asset">Asset</label>
+                <select id="builder-asset">
+                    {% for symbol in market_symbols %}
+                    <option value="{{ symbol }}" {% if symbol == selected_symbol %}selected{% endif %}>{{ symbol.replace('USDT', ' / USDT') }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="builder-questions" id="builder-questions">
+                <p class="note">Loading builder options...</p>
+            </div>
+            <div class="builder-actions">
+                <button type="button" id="builder-reset" class="button-secondary">Reset</button>
+                <button type="button" id="builder-preview" class="toolbar-action">Preview</button>
+            </div>
+        </form>
+
+        <article class="builder-preview" id="builder-preview-card">
+            <div class="builder-preview-head">
+                <p class="evidence-label">Resolved strategy</p>
+                <span class="badge" id="builder-readiness">Pending</span>
+            </div>
+            <h3 id="builder-summary">Pick options and press Preview.</h3>
+            <p class="note" id="builder-evaluation-note">Evaluation basis will appear here.</p>
+
+            <div class="builder-layer-grid">
+                <div>
+                    <p class="metric-label">Required layers</p>
+                    <p id="builder-required-layers">n/a</p>
+                </div>
+                <div>
+                    <p class="metric-label">Optional layers</p>
+                    <p id="builder-optional-layers">n/a</p>
+                </div>
+                <div>
+                    <p class="metric-label">Unavailable for this asset</p>
+                    <p id="builder-unavailable-layers">n/a</p>
+                </div>
+                <div>
+                    <p class="metric-label">Sentiment role</p>
+                    <p id="builder-sentiment-role">n/a</p>
+                </div>
+                <div>
+                    <p class="metric-label">On-chain role</p>
+                    <p id="builder-onchain-role">n/a</p>
+                </div>
+                <div>
+                    <p class="metric-label">Resolved timeframe</p>
+                    <p id="builder-timeframe">n/a</p>
+                </div>
+            </div>
+
+            <div class="builder-save-row">
+                <input type="text" id="builder-name" placeholder="Profile name (e.g. BTC trend balanced)">
+                <button type="button" id="builder-save" class="toolbar-action" disabled>Save to account</button>
+            </div>
+            <p class="note" id="builder-save-status"></p>
         </article>
     </div>
 </section>
@@ -275,14 +428,24 @@
             <p class="metric-value" id="tech-policy">n/a</p>
         </div>
     </div>
-    <p class="technical-note" id="tech-note">
-        These technical details are available for users who want to inspect the underlying methodology.
-    </p>
+    <div class="technical-glossary">
+        <h4>What these mean</h4>
+        <dl>
+            <dt>Raw confidence</dt><dd>Model's probability for the picked class. 0 to 1.</dd>
+            <dt>Walk-forward folds</dt><dd>Number of retrain-and-test windows used.</dd>
+            <dt>Test macro-F1</dt><dd>Class-balanced F1 score on held-out data.</dd>
+            <dt>Sharpe ratio</dt><dd>Annualised return per unit of volatility.</dd>
+            <dt>Max drawdown</dt><dd>Worst peak-to-trough loss in the window.</dd>
+            <dt>Trade count</dt><dd>How many times the strategy switched position.</dd>
+            <dt>Engine</dt><dd>Model family producing the signal.</dd>
+            <dt>Policy</dt><dd>Rule that turns probabilities into long or flat.</dd>
+        </dl>
+    </div>
 </details>
 {% endblock %}
 
 {% block extra_js %}
 <script id="market-summaries-data" type="application/json">{{ market_summaries|tojson }}</script>
 <script id="strategy-registry-data" type="application/json">{{ strategy_registry|tojson }}</script>
-<script src="{{ url_for('static', filename='css/js/strategies.js') }}"></script>
+<script src="{{ url_for('static', filename='css/js/strategies.js') }}?v=3"></script>
 {% endblock %}

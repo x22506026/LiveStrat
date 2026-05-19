@@ -76,65 +76,35 @@
         const contextMode = getContextMode(summary);
 
         let base;
+        const conf = (confidence * 100).toFixed(1);
         if (signal === 'buy') {
-            base = `${asset} currently says Buy because the backend sees enough positive evidence. Confidence is ${(
-                confidence * 100
-            ).toFixed(1)}% under a ${trend} trend reading.`;
+            base = `${asset}: Buy at ${conf}% confidence. Trend ${trend}.`;
         } else if (signal === 'dont_buy') {
-            base = `${asset} currently says Avoid because the backend does not see enough evidence to justify entry. Confidence is ${(
-                confidence * 100
-            ).toFixed(1)}%.`;
+            base = `${asset}: Avoid at ${conf}% confidence.`;
         } else if (signal === 'hold') {
-            base = `${asset} currently says Hold because the backend sees a mixed market picture.`;
+            base = `${asset}: Hold. Mixed picture.`;
         } else {
-            base = `${asset} does not currently have a strong actionable signal, so the engine is staying descriptive rather than directional.`;
+            base = `${asset}: no strong signal right now.`;
         }
 
-        const reasonBits = [`Volatility is ${volatility}.`];
+        const reasonBits = [`Volatility ${volatility}.`];
 
         if (sentimentSource !== 'unavailable') {
-            reasonBits.push(
-                `Effective sentiment is ${formatSignal(sentimentLabel)} via ${formatTitle(sentimentSource)}.`
-            );
-        } else {
-            reasonBits.push('No usable sentiment layer is currently available.');
+            reasonBits.push(`Sentiment ${formatSignal(sentimentLabel)} (${formatTitle(sentimentSource)}).`);
         }
 
         if (onchainLabel !== 'unavailable') {
-            const onchainReason = summary.latest_onchain_regime_reason || '';
-            reasonBits.push(
-                onchainReason
-                    ? `On-chain context is ${formatSignal(onchainLabel)} because ${onchainReason}.`
-                    : `On-chain context is ${formatSignal(onchainLabel)}.`
-            );
-        } else if (String(summary.latest_onchain_snapshot_status || 'unavailable') === 'stale') {
-            reasonBits.push(
-                `The latest available on-chain snapshot is ${formatSignal(summary.latest_onchain_snapshot_label || 'unknown')} from ${Number(summary.latest_onchain_snapshot_age_days || 0).toFixed(0)} days ago${summary.latest_onchain_snapshot_reason ? ` because ${summary.latest_onchain_snapshot_reason}` : ''}.`
-            );
-        } else {
-            reasonBits.push('No on-chain confirmation is currently available.');
+            reasonBits.push(`On-chain ${formatSignal(onchainLabel)}.`);
         }
 
         const walkforwardFolds = Number(summary.walkforward_fold_count || 0);
-        if (walkforwardFolds > 0 && walkforwardExcess > 0) {
-            reasonBits.push(`Rolling validation excess return is positive at ${(walkforwardExcess * 100).toFixed(1)}%.`);
-        } else if (walkforwardFolds > 0 && walkforwardExcess < 0) {
-            reasonBits.push(`Rolling validation excess return is negative at ${(walkforwardExcess * 100).toFixed(1)}%, so this signal should be treated cautiously.`);
+        if (walkforwardFolds > 0 && walkforwardExcess !== 0) {
+            reasonBits.push(`Walk-forward excess ${(walkforwardExcess * 100).toFixed(1)}%.`);
         }
 
         if (strategyReturn !== 0 || buyHoldReturn !== 0) {
-            reasonBits.push(
-                `Current policy return is ${(strategyReturn * 100).toFixed(1)}% versus buy-and-hold ${(buyHoldReturn * 100).toFixed(1)}%.`
-            );
+            reasonBits.push(`Strategy ${(strategyReturn * 100).toFixed(1)}% vs hold ${(buyHoldReturn * 100).toFixed(1)}%.`);
         }
-
-        if (multimodalContextVariant) {
-            reasonBits.push(
-                `The current multimodal extension selected ${formatSignal(multimodalContextVariant)} on validation, with validation macro-F1 ${(multimodalValidationMacroF1 * 100).toFixed(1)}% and held-out macro-F1 ${(multimodalTestMacroF1 * 100).toFixed(1)}%.`
-            );
-        }
-
-        reasonBits.push(`Context mode is ${contextMode.modeLabel.toLowerCase()}, meaning ${contextMode.note}.`);
 
         return simplifyCopy(`${base} ${reasonBits.join(' ')}`);
     }

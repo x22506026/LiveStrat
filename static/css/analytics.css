@@ -669,3 +669,187 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* --- Statistical significance --- */
+
+.significance-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+    padding: 22px 24px;
+    margin-bottom: 24px;
+}
+
+.significance-legend {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 14px 0 16px;
+}
+
+.significance-legend-note {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.sig-pill {
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+
+.sig-pill-pass { background: rgba(0, 155, 99, 0.12); color: var(--success); border-color: rgba(0, 155, 99, 0.32); }
+.sig-pill-weak { background: rgba(201, 135, 0, 0.12); color: var(--warning); border-color: rgba(201, 135, 0, 0.32); }
+.sig-pill-insufficient { background: rgba(101, 114, 134, 0.14); color: var(--text-muted); border-color: var(--border); }
+
+.significance-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.significance-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.significance-table th,
+.significance-table td {
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.significance-table thead th {
+    background: var(--bg-card-muted);
+    color: var(--text-soft);
+    font-weight: 600;
+}
+
+.significance-table td.is-positive { color: var(--success); font-weight: 600; }
+.significance-table td.is-negative { color: var(--danger); font-weight: 600; }
+.significance-table td.is-strong { color: var(--success); font-weight: 700; }
+
+.significance-table tr:hover td { background: rgba(0, 139, 90, 0.04); }
+
+/* --- Cross-asset comparison heatmap --- */
+
+.comparison-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+    padding: 22px 24px;
+    margin-bottom: 24px;
+}
+
+.comparison-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 14px;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.88rem;
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.comparison-table th:first-child,
+.comparison-table td:first-child {
+    text-align: left;
+    background: var(--bg-card-muted);
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.comparison-table thead th {
+    background: var(--bg-card-muted);
+    color: var(--text-soft);
+    font-weight: 600;
+}
+
+.comparison-table tbody td.heat {
+    color: var(--text-main);
+    font-weight: 600;
+    border-left: 1px solid var(--border);
+}
+
+.comparison-table tbody tr:hover td {
+    filter: brightness(0.97);
+}
+
+.comparison-verdict-pill {
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+
+.significance-takeaway {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(0, 139, 90, 0.06);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    color: var(--text-main);
+}
+
+.technical-glossary {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--bg-card-muted);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.technical-glossary h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-soft);
+    margin-bottom: 10px;
+}
+
+.technical-glossary dl {
+    display: grid;
+    grid-template-columns: minmax(140px, max-content) 1fr;
+    column-gap: 18px;
+    row-gap: 6px;
+    margin: 0;
+}
+
+.technical-glossary dt {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.86rem;
+}
+
+.technical-glossary dd {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+}

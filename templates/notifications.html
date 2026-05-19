@@ -9,12 +9,11 @@
 {% block content %}
 <section class="notifications-toolbar">
     <div class="toolbar-copy">
-        <p class="toolbar-kicker">Messages and alerts</p>
-        <h2>Generate strategy messages and save them to your account.</h2>
-        <p class="note">Build a message from the latest LiveStrat data, save it to history, or prepare Telegram delivery if you have configured a bot.</p>
+        <p class="toolbar-kicker">Messages</p>
+        <h2>Generate alerts. Save them to your account.</h2>
+        <p class="note">Optional Telegram delivery if a bot is configured.</p>
     </div>
     <div class="notification-toolbar-meta">
-        <span class="notif-meta-pill" id="notif-account-meta">Account-linked</span>
         <span class="notif-meta-pill" id="notif-telegram-meta">Telegram: checking...</span>
     </div>
 </section>
@@ -109,8 +108,8 @@
     <section class="card">
         <div class="section-heading">
             <div>
-                <h2>Current Message</h2>
-                <p class="note">Built from the selected asset, strategy, timeframe, and enabled message types.</p>
+                <h2>Current message</h2>
+                <p class="note">Built from the selected asset, strategy, and timeframe.</p>
             </div>
             <span class="badge">Ready to save</span>
         </div>
@@ -215,8 +214,8 @@
 <section class="card generated-alerts-card">
     <div class="section-heading">
         <div>
-            <h2>Current Generated Messages</h2>
-            <p class="note">Messages created from your current settings before saving.</p>
+            <h2>Generated messages</h2>
+            <p class="note">From your current settings. Save to keep them.</p>
         </div>
         <span class="badge" id="notif-alert-count">0 messages</span>
     </div>
@@ -232,8 +231,8 @@
 <section class="card generated-alerts-card">
     <div class="section-heading">
         <div>
-            <h2>Saved Message History</h2>
-            <p class="note">Saved in-app messages linked to your LiveStrat account.</p>
+            <h2>Message history</h2>
+            <p class="note">Saved alerts on this account.</p>
         </div>
         <span class="badge" id="notif-event-count">0 events</span>
     </div>
