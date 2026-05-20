@@ -36,6 +36,8 @@ analytics_pipeline/data/processed/*.txt
 
 # Keep only the app-facing current refresh manifest under version control
 !analytics_pipeline/data/processed/market_intelligence_refresh_manifest.json
+# Keep the FinBERT validation input set under version control
+!analytics_pipeline/data/processed/finbert_validation_set.csv
 
 # Working notes used during project development
 docs/

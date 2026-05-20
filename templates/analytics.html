@@ -193,6 +193,17 @@
         </table>
     </div>
     <p class="note" id="comparison-caption"></p>
+
+    <div class="technical-glossary">
+        <h4>How to read these numbers</h4>
+        <dl>
+            <dt>Random baseline</dt><dd>A pure guess on the 3 class problem (buy, hold, avoid) scores around 33 percent accuracy. On the binary long or flat run, random scores 50 percent.</dd>
+            <dt>Accuracy alone</dt><dd>Misleading on imbalanced data. A model that always says hold can post high accuracy and zero profit.</dd>
+            <dt>Macro F1</dt><dd>Class balanced score. Better than accuracy when buy and avoid labels are rare.</dd>
+            <dt>Excess vs hold</dt><dd>Strategy return minus passive hold return. Small positive numbers can still be useful when paired with good risk control.</dd>
+            <dt>DSR</dt><dd>Final honesty check. Below 0.95 means the platform refuses to claim a real edge no matter how the other columns look.</dd>
+        </dl>
+    </div>
 </section>
 
 <section class="ablation-section">

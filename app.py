@@ -91,7 +91,7 @@ db.init_app(app)
 
 PROCESSED_DIR = PROJECT_DIR / "analytics_pipeline" / "data" / "processed"
 
-# in-process TTL cache for the two slowest endpoints so the page feels instant
+# cache results for the slowest endpoints for 5 minutes so the page feels fast
 import time as _time
 import threading as _threading
 _PAYLOAD_CACHE = {}

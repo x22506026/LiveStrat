@@ -112,7 +112,7 @@ Writes seven PNGs to `report_figures/`.
 $env:PYTHONPATH = 'analytics_pipeline'
 python -m src.sentiment.validate_finbert
 ```
-Runs FinBERT on 16 hand-curated crypto headlines and writes `finbert_validation_run.csv`.
+Runs FinBERT and the lexical fallback on the labelled headlines in `analytics_pipeline/data/processed/finbert_validation_set.csv`. Writes per row results to `finbert_validation_run.csv` and prints overall and per class agreement.
 
 
 ## Project structure

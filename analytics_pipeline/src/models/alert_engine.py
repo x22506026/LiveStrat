@@ -284,8 +284,8 @@ def build_alerts_for_market_summary(
                 )
             )
 
-    # context-mix alert intentionally omitted from generation — it is housekeeping,
-    # not actionable. The Analytics page surfaces the active context family directly.
+    # context mix alert omitted on purpose. It is housekeeping, not a trade signal.
+    # The Analytics page already shows the active context family.
 
     return alerts
 
